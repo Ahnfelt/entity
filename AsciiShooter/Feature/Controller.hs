@@ -1,12 +1,12 @@
 {-# LANGUAGE TemplateHaskell, DeriveDataTypeable #-}
 
-module Feature.Controller where
+module AsciiShooter.Feature.Controller where
 
 import Data.Typeable
 import Data.Record.Label
 import Feature
-import qualified Feature.Position as Position
-import qualified Feature.Inventory as Inventory
+import qualified AsciiShooter.Feature.Position as Position
+import qualified AsciiShooter.Feature.Inventory as Inventory
 
 data Type = Type {
     _controller :: Game ()

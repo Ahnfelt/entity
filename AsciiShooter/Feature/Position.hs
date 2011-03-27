@@ -1,11 +1,11 @@
 {-# LANGUAGE TemplateHaskell, DeriveDataTypeable #-}
 
-module Feature.Position where
+module AsciiShooter.Feature.Position where
 
 import Data.Typeable
 import Data.Record.Label
 import Feature
-import World.Mechanics
+import AsciiShooter.World.Mechanics
 
 data Type = Type {
     _position :: Var Position

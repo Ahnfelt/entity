@@ -1,16 +1,16 @@
-module Entity.Player where
+module AsciiShooter.Entity.Player where
 
 import Data.Typeable
 import Data.Record.Label
 import Data.Maybe
 import Control.Monad
 import Feature
-import qualified Feature.Position as Position
-import qualified Feature.Health as Health
-import qualified Feature.Controller as Controller
-import qualified Feature.PrimaryWeapon as PrimaryWeapon
-import qualified Feature.Inventory as Inventory
-import qualified Feature.Trigger as Trigger
+import qualified AsciiShooter.Feature.Position as Position
+import qualified AsciiShooter.Feature.Health as Health
+import qualified AsciiShooter.Feature.Controller as Controller
+import qualified AsciiShooter.Feature.PrimaryWeapon as PrimaryWeapon
+import qualified AsciiShooter.Feature.Inventory as Inventory
+import qualified AsciiShooter.Feature.Trigger as Trigger
 
 new :: Game (Entity ())
 new = object $ \this -> do

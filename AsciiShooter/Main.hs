@@ -1,8 +1,8 @@
-
+module AsciiShooter.Main where
 
 import Feature
-import qualified Entity.Player as Player
-import qualified Feature.Position as Position
+import qualified AsciiShooter.Entity.Player as Player
+import qualified AsciiShooter.Feature.Position as Position
 import Control.Concurrent.STM
 import Control.Monad
 import Data.Maybe

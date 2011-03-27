@@ -1,12 +1,12 @@
 {-# LANGUAGE TemplateHaskell, DeriveDataTypeable #-}
 
-module Feature.Trigger where
+module AsciiShooter.Feature.Trigger where
 
 import Data.Typeable
 import Data.Record.Label
 import Feature
-import qualified Feature.Magazine as Magazine
-import qualified Feature.Cooldown as Cooldown
+import qualified AsciiShooter.Feature.Magazine as Magazine
+import qualified AsciiShooter.Feature.Cooldown as Cooldown
 
 data Type = Type {
     _trigger :: Game ()

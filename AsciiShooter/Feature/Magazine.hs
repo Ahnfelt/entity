@@ -1,6 +1,6 @@
 {-# LANGUAGE TemplateHaskell, DeriveDataTypeable #-}
 
-module Feature.Magazine where
+module AsciiShooter.Feature.Magazine where
 
 import Data.Typeable
 import Data.Record.Label
