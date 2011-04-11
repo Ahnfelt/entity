@@ -16,3 +16,4 @@ run n = do
         pos' <- runGame state $ get Position.position pos
         print pos'
 
+
