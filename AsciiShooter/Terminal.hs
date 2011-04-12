@@ -34,9 +34,8 @@ background width height =
 
 drawTank :: Picture -> Tank -> Picture
 drawTank picture tanks =
-    let sprite' = translateSprite tankLocation sprite
-    picture <- readTVar pictureVar
-    writeTVar pictureVar (picture // sprite')
+    let sprite = translateSprite tankLocation sprite
+    picture // sprite
     
 
 draw :: Window -> (Color -> ColorID) -> Picture -> Curses ()
