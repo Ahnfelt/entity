@@ -20,31 +20,20 @@ type Tank = (Position, Rotaion)
 
 main = runCurses $ do
     window <- defaultWindow
-    (rows, columns) <- screenSize
-    let picture = background (columns - 1) (rows - 2)
-    pictureVar <- liftIO (newTVarIO picture)
     tankVar <- liftIO (newTVarIO ((10, 10), North))
     keyChan <- liftIO newTChanIO
-    liftIO $ forkIO (controller pictureVar keyChan)
-    drawListenLoop window pictureVar keyChan
+    liftIO $ forkIO (controller tankVar keyChan)
+    drawListenLoop window tankVar keyChan
 
-background :: Int -> Int -> DiffArray (Int, Int) (Char, Color)     
+background :: Integral a => a -> a -> DiffArray (Int, Int) (Char, Color)     
 background width height = 
     listArray ((0, 0), (fromIntegral width - 1, fromIntegral height - 2)) (repeat (' ', Red))
 
-drawTank :: Picture -> Tank -> Picture
-drawTank picture tanks =
-    let sprite = translateSprite tankLocation sprite
-    picture // sprite
-    
-
 draw :: Window -> (Color -> ColorID) -> Picture -> Curses ()
 draw window colors picture = do
-    (rows, columns) <- screenSize
     updateWindow window $ do
         forM_ (assocs picture) $ \((x, y), (character, color)) -> do
             moveCursor (fromIntegral y) (fromIntegral x)
-            --trace (show (x, y)) $ do
             setColor (colors color)
             drawText (pack ([character]))
     render
@@ -69,14 +58,17 @@ listener window keyChan = do
             _ -> return ()
 
 
-drawListenLoop :: Window -> TVar Picture -> TChan Key -> Curses ()
-drawListenLoop window pictureVar keyChan = do 
+drawListenLoop :: Window -> TVar Tank -> TChan Key -> Curses ()
+drawListenLoop window tankVar keyChan = do 
     red <- newColorID ColorRed ColorBlack 1
     loop window (const red)
     where
         loop :: Window -> (Color -> ColorID) -> Curses ()
         loop window colors = do
-            picture <- liftIO (readTVarIO pictureVar)
+            (rows, columns) <- screenSize
+            let picture = background columns rows
+            tank <- liftIO (readTVarIO tankVar)
+            picture <- return $ drawTank picture tank
             draw window colors picture
             listener window keyChan
             loop window colors
@@ -90,8 +82,8 @@ controller tankVar keyChan = loop
                 key <- readTChan keyChan
                 ((x, y), _) <- readTVar tankVar
                 let tank = case key of
-                        KeyUp -> ((x, y + 1), North)
-                        KeyDown -> ((x, y - 1), South)
+                        KeyUp -> ((x, y - 1), North)
+                        KeyDown -> ((x, y + 1), South)
                         KeyLeft -> ((x - 1, y), West)
                         KeyRight -> ((x + 1, y), East)
                 writeTVar tankVar tank
@@ -107,18 +99,15 @@ tankAsciiNorth = [
     "¤()¤",
     "¤--¤"]
 
-tankAsciiWest = [    [
+tankAsciiEast = [
     "¤¤¤ ",
     "|o==",
     "¤¤¤ "]
             
-tankSpriteNorth = toSprite tankAsciiNorth
-
-tankSpriteSouth = toSprite (reverse tankAsciiNorth)
-
-tankSpriteEast = toSprite (map reverse tankAsciiWest)
-
-tankSpriteWast = toSprite tankAsciiWest
+tankSprite North = toSprite tankAsciiNorth
+tankSprite South = toSprite (reverse tankAsciiNorth)
+tankSprite West = toSprite (map reverse tankAsciiEast)
+tankSprite East = toSprite tankAsciiEast
 
 toSprite :: [String] -> [((Int, Int), (Char, Color))]
 toSprite lines = toSpriteLines 0 lines
@@ -131,6 +120,11 @@ toSprite lines = toSpriteLines 0 lines
         toSpriteLine column row [] = []
         toSpriteLine column row (char : line) = ((column, row), (char, Red)) : toSpriteLine (column + 1) row line
             
+drawTank :: Picture -> Tank -> Picture
+drawTank picture (location, rotation) = 
+    let sprite = translateSprite location (tankSprite rotation) in
+    picture // sprite
+    
 
 
 first :: (a -> b) -> (a, c) -> (b, c)
