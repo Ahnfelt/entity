@@ -1,6 +1,5 @@
 import Feature
-import qualified AsciiShooter.Entity.Player as Player
-import qualified AsciiShooter.Feature.Position as Position
+import qualified AsciiShooter.Entity.Tank as Tank
 import AsciiShooter.World
 import AsciiShooter.World.NCurses
 
@@ -15,9 +14,15 @@ main = do
     entitiesVar <- newTVarIO []
     deltaTimeVar <- newTVarIO 0
     let state = GameState { gameEntities = entitiesVar, gameDeltaTime = deltaTimeVar }
-    runGame state (liftM spawn Player.new)
+    replicateM_ 500 $ do
+        p <- runGame state (Tank.new)
+        runGame state (spawn p)
     newTime <- getCurrentTime
     lastTime <- newIORef newTime
+
+    drawTime <- newIORef 0
+    updateTime <- newIORef 0
+
     withWorld $ \world -> forever $ do
         input' <- input world
         oldTime <- readIORef lastTime
@@ -26,7 +31,7 @@ main = do
         atomically $ writeTVar deltaTimeVar (diffTime newTime oldTime)
         updateGameState state
         entities <- atomically $ readTVar entitiesVar
-        output world WorldOutput { outputEntities = entities }
+        output world state
 
 spawn :: Entity () -> Game (Entity ())
 spawn entity = do

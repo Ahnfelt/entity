@@ -12,7 +12,8 @@
 --       It is also used for the Has type class synonym.
 
 module Feature (
-    GameState (..), Game, runGame, Var, updateGameState,
+    GameState (..), Game, runGame, Var, 
+    updateGameState, deltaTime,
     (.:.), Combine ((+++)), 
     Entity, toEntity, updateEntity, 
     requireFeature, RequireFeatures (..), 
@@ -41,6 +42,15 @@ updateGameState :: GameState -> IO ()
 updateGameState state = do
     entities <- atomically $ readTVar (gameEntities state)
     mapM_ (runGame state . updateEntity) entities
+
+deltaTime :: Game Double
+deltaTime = do
+    state <- ask
+    let deltaTimeVar = gameDeltaTime state
+    lift (readTVar deltaTimeVar)
+
+
+-- Reusable stuff
 
 type Game a = ReaderT GameState STM a
 
