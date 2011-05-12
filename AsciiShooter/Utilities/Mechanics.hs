@@ -1,7 +1,7 @@
-module AsciiShooter.World.Mechanics where
+module AsciiShooter.Utilities.Mechanics where
 
 import Prelude hiding ((/), acos, sqrt)
-import AsciiShooter.World.Floating
+import AsciiShooter.Utilities.Floating
     
 type Vector = (Double, Double)
 type LineSegment = (Vector, Vector)
@@ -36,12 +36,19 @@ interpolate t i [] = i
 --- Vector stuff
 -----------------------
 
--- Operators for 2d vectors
-(.+) :: Vector -> Vector -> Vector
-(x1, y1) .+ (x2, y2) = (x1 + x2, y1 + y2)
+vectorX :: Vector -> Double
+vectorX = fst
 
-(.-) :: Vector -> Vector -> Vector
-(a, b) .- (c, d) = (a - c, b - d)
+vectorY :: Vector -> Double
+vectorY = snd
+
+-- Operators for 2d vectors
+
+(.+.) :: Vector -> Vector -> Vector
+(x1, y1) .+. (x2, y2) = (x1 + x2, y1 + y2)
+
+(.-.) :: Vector -> Vector -> Vector
+(a, b) .-. (c, d) = (a - c, b - d)
 
 (.*) :: Vector -> Magnitude -> Vector
 (x, y) .* s = (x * s, y * s)
@@ -49,10 +56,18 @@ interpolate t i [] = i
 (./) :: Vector -> Double -> Vector
 (a, b) ./ d = (a/d, b/d)
 
-infixl 6 .+
-infixl 6 .-
+(*.) :: Magnitude -> Vector -> Vector
+s *. (x, y) = (s * x, s * y)
+
+(/.) :: Double -> Vector -> Vector
+d /. (a, b) = (d/a, d/b)
+
+infixl 6 .+.
+infixl 6 .-.
 infixr 7 .*
 infixr 7 ./
+infixr 7 *.
+infixr 7 /.
 
 vectorLength :: Vector -> Double
 vectorLength (a,b) = sqrt (a*a + b*b)

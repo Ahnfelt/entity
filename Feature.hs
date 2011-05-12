@@ -12,7 +12,7 @@
 --       It is also used for the Has type class synonym.
 
 module Feature (
-    GameState (..), Game, runGame, Var,
+    GameState (..), Game, runGame, Var, updateGameState,
     (.:.), Combine ((+++)), 
     Entity, toEntity, updateEntity, 
     requireFeature, RequireFeatures (..), 
@@ -32,7 +32,15 @@ import Data.Maybe
 import Data.Record.Label
 
 
-data GameState = GameState {}
+data GameState = GameState {
+    gameEntities :: TVar [Entity ()],
+    gameDeltaTime :: TVar Double
+    }
+
+updateGameState :: GameState -> IO ()
+updateGameState state = do
+    entities <- atomically $ readTVar (gameEntities state)
+    mapM_ (runGame state . updateEntity) entities
 
 type Game a = ReaderT GameState STM a
 

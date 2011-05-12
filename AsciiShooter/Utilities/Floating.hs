@@ -1,4 +1,4 @@
-module AsciiShooter.World.Floating ((/), acos, sqrt) where
+module AsciiShooter.Utilities.Floating ((/), acos, sqrt) where
 import qualified Prelude as P
 
 -- exception safe operations
