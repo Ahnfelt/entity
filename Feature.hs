@@ -13,7 +13,7 @@
 
 module Feature (
     GameState (..), Game, runGame, Var, 
-    updateGameState, deltaTime,
+    updateGameState, deltaTime, allEntities,
     (.:.), Combine ((+++)), 
     Entity, toEntity, updateEntity, 
     requireFeature, RequireFeatures (..), 
@@ -49,6 +49,11 @@ deltaTime = do
     let deltaTimeVar = gameDeltaTime state
     lift (readTVar deltaTimeVar)
 
+allEntities :: Game [Entity ()]
+allEntities = do
+    state <- ask
+    let entitiesVar = gameEntities state
+    lift (readTVar entitiesVar)
 
 -- Reusable stuff
 

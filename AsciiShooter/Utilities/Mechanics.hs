@@ -5,17 +5,19 @@ import AsciiShooter.Utilities.Floating
     
 type Vector = (Double, Double)
 type LineSegment = (Vector, Vector)
+type Box = (Vector, Vector)
 type Position = Vector
 type Velocity = Vector
+type Acceleration = Vector
 type Dimension = Vector
 type Angle = Double
 type Magnitude = Double
 type Duration = Double
 
 
--- Velocity from angle and magnitude
-velocity :: Angle -> Magnitude -> Velocity
-velocity a m = (cos a * m, sin a * m)
+-- Vector from angle and magnitude
+vector :: Angle -> Magnitude -> Vector
+vector a m = (cos a * m, sin a * m)
 
 
 -- Approximate an angle a' from a, taking 1/d iterations to turn a full circle
@@ -41,6 +43,9 @@ vectorX = fst
 
 vectorY :: Vector -> Double
 vectorY = snd
+
+zero :: Vector
+zero = (0, 0)
 
 -- Operators for 2d vectors
 

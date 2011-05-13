@@ -6,7 +6,7 @@ import Data.Typeable
 import Data.Record.Label
 
 import Feature
-import AsciiShooter.Utilities.Mechanics hiding (velocity)
+import AsciiShooter.Utilities.Mechanics
 import qualified AsciiShooter.Feature.Position as Position
 
 data Type = Type {
