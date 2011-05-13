@@ -13,7 +13,7 @@
 
 module Feature (
     GameState (..), Game, runGame, Var, 
-    updateGameState, deltaTime, allEntities,
+    updateGameState, deltaTime, allEntities, spawn,
     (.:.), Combine ((+++)), 
     Entity, toEntity, updateEntity, 
     requireFeature, RequireFeatures (..), 
@@ -32,6 +32,8 @@ import Data.Dynamic
 import Data.Maybe
 import Data.Record.Label
 
+
+-- Game specific stuff (or is it?)
 
 data GameState = GameState {
     gameEntities :: TVar [Entity ()],
@@ -54,6 +56,15 @@ allEntities = do
     state <- ask
     let entitiesVar = gameEntities state
     lift (readTVar entitiesVar)
+
+spawn :: Entity () -> Game (Entity ())
+spawn entity = do
+    state <- ask
+    let entitiesVar = gameEntities state
+    entities <- lift (readTVar entitiesVar)
+    lift $ writeTVar entitiesVar (entity : entities)
+    return entity
+
 
 -- Reusable stuff
 

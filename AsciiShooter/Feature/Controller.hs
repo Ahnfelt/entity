@@ -2,11 +2,10 @@
 
 module AsciiShooter.Feature.Controller where
 
+import Feature
+
 import Data.Typeable
 import Data.Record.Label
-import Feature
-import qualified AsciiShooter.Feature.Position as Position
-import qualified AsciiShooter.Feature.Inventory as Inventory
 
 data Type = Type {
     _controller :: Game ()

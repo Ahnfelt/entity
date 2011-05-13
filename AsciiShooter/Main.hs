@@ -40,14 +40,6 @@ main = do
         entities <- atomically $ readTVar entitiesVar
         output world state
 
-spawn :: Entity () -> Game (Entity ())
-spawn entity = do
-    state <- ask
-    let entitiesVar = gameEntities state
-    entities <- lift (readTVar entitiesVar)
-    lift $ writeTVar entitiesVar (entity : entities)
-    return entity
-
 diffTime :: UTCTime -> UTCTime -> Double
 diffTime newTime oldTime = (fromRational . toRational) (diffUTCTime newTime oldTime)
 
