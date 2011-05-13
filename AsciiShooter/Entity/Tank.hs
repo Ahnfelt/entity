@@ -14,9 +14,9 @@ import Data.Record.Label
 import Data.Maybe
 import Control.Monad
 
-new :: Game (Entity ())
-new = object $ \this -> do
-    physics <- Physics.new (10, 10) (1, 1) zero (3, 3)
+new :: Position -> Velocity -> Game (Entity ())
+new position velocity = object $ \this -> do
+    physics <- Physics.new position velocity zero (3, 3)
     health <- Health.new 100
     controller <- Controller.new (method control this)
     trigger <- Trigger.new (method trig this)

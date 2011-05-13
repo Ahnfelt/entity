@@ -1,7 +1,7 @@
 module AsciiShooter.World.Ascii where
 
 import Feature
-import qualified AsciiShooter.Feature.Position as Position
+import qualified AsciiShooter.Feature.Physics as Physics
 import AsciiShooter.Utilities.Mechanics
 import AsciiShooter.World
 
@@ -22,7 +22,7 @@ playerColor 2 = Green
 drawEntity :: Picture -> Entity () -> Game Picture
 drawEntity picture entity = case getFeature entity of
     Just feature -> do
-        position <- get Position.position feature
+        position <- Physics.getPosition feature
         return $ drawTank picture Red (position, North)
     Nothing -> return picture
 

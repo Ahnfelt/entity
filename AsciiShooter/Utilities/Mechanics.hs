@@ -32,8 +32,11 @@ approximateAngle t a a' =
 interpolate :: Duration -> Double -> [(Duration, Double)] -> Double
 interpolate t i _ | t <= 0 = i
 interpolate t i ((d, v):ps) | t > d = interpolate (t - d) v ps
-interpolate t i ((d, v):ps) = let f = t / (d + 0.00001) in (1.0 - f) * i + f * v
+interpolate t i ((d, v):ps) = let f = t / (d + epsilon) in (1.0 - f) * i + f * v
 interpolate t i [] = i
+
+
+epsilon = 0.00001
 
 --- Vector stuff
 -----------------------
@@ -85,4 +88,5 @@ dot (a, b) (c, d) = a*c + b*d
 
 angle :: Vector -> Vector -> Double
 angle v1 v2 = let x = norm v1 `dot` norm v2 in if x < -1 || x > 1 then pi else acos x
+
 

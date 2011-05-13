@@ -14,9 +14,16 @@ main = do
     entitiesVar <- newTVarIO []
     deltaTimeVar <- newTVarIO 0
     let state = GameState { gameEntities = entitiesVar, gameDeltaTime = deltaTimeVar }
-    replicateM_ 500 $ do
-        p <- runGame state (Tank.new)
-        runGame state (spawn p)
+
+    p <- runGame state (Tank.new (10, 40) (5, 0))
+    runGame state (spawn p)
+
+    p <- runGame state (Tank.new (10, 10) (5, 5))
+    runGame state (spawn p)
+
+    p <- runGame state (Tank.new (100, 50) (-10, -1.72))
+    runGame state (spawn p)
+
     newTime <- getCurrentTime
     lastTime <- newIORef newTime
 
