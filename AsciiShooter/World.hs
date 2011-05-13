@@ -1,13 +1,14 @@
 module AsciiShooter.World where
 
 import Feature
+import AsciiShooter.Key
 
 data Direction = North | South | East | West deriving (Eq, Ord, Show)
-data Key = KeyDirection Direction | KeyBreak | KeyFire deriving (Eq, Ord, Show)
-type PlayerKey = (Key, Int)
+type Player = Int
+type PlayerKey = (Player, Key)
 
 data WorldInput = WorldInput {
-    inputKeys :: Maybe PlayerKey
+    inputKeys :: [PlayerKey]
     }
 
 type WorldOutput = GameState

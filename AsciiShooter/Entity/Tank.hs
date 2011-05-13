@@ -1,31 +1,34 @@
-module AsciiShooter.Entity.Tank where
+module AsciiShooter.Entity.Tank (new) where
 
 import Feature
+import AsciiShooter.Key
+import AsciiShooter.World
 import AsciiShooter.Utilities.Mechanics
+import AsciiShooter.Feature.Physics (Hit (..))
 import qualified AsciiShooter.Feature.Physics as Physics
-import qualified AsciiShooter.Feature.Health as Health
-import qualified AsciiShooter.Feature.Controller as Controller
-import qualified AsciiShooter.Feature.PrimaryWeapon as PrimaryWeapon
-import qualified AsciiShooter.Feature.Inventory as Inventory
-import qualified AsciiShooter.Feature.Trigger as Trigger
+import qualified AsciiShooter.Feature.Listener as Listener
 
-import Data.Typeable
-import Data.Record.Label
-import Data.Maybe
 import Control.Monad
 
-new :: Position -> Velocity -> Game (Entity ())
-new position velocity = object $ \this -> do
+new :: Player -> Position -> Velocity -> Game (Entity ())
+new player position velocity = object $ \this -> do
     physics <- Physics.new position velocity zero (3, 3)
-    health <- Health.new 100
-    controller <- Controller.new (method control this)
-    trigger <- Trigger.new (method trig this)
-    primaryWeapon <- PrimaryWeapon.new trigger
-    inventory <- Inventory.new []
-    return $ toEntity $ controller .:. physics .:. health .:. primaryWeapon .:. inventory .:. nil
+    keyListener <- Listener.new (method (onKey player) this)
+    hitListener <- Listener.new (method onHit this)
+    return $ toEntity $ keyListener .:. physics .:. hitListener .:. nil
+
+onHit this Hit { receiversFault = myFault, hitEntity = entity } = do
+    when myFault $ unspawn this
+
+onKey player' this (player, key) = when (player == player') $ case key of
+    KeyNorth -> setVelocity (0, 15)
+    KeySouth -> setVelocity (0, -15)
+    KeyEast -> setVelocity (15, 0)
+    KeyWest -> setVelocity (-15, 0)
+    KeyBreak -> setVelocity (0, 0)
+    KeyFire -> return ()
     where
-        control this = do
-            return ()
-        trig this = do
-            return ()
+        setVelocity velocity = do
+            let physics = requireFeature this
+            Physics.modifyVelocity (const velocity) physics
 

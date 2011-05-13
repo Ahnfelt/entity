@@ -4,7 +4,8 @@ module AsciiShooter.Feature.Physics (
     Type, new, 
     modifyAcceleration, modifyVelocity,
     getAcceleration, getVelocity, getPosition,
-    getBoundingBox
+    getBoundingBox,
+    Hit (..)
     ) where
 
 import Feature
@@ -23,6 +24,11 @@ data Type = Type {
     } deriving (Typeable)
 
 $(mkLabels [''Type])
+
+data Hit = Hit { 
+    receiversFault :: Bool,
+    hitEntity :: Entity ()
+    } deriving (Typeable)
 
 instance Updateable Type where
     updater self = Just $ do

@@ -13,7 +13,8 @@
 
 module Feature (
     GameState (..), Game, runGame, Var, 
-    updateGameState, deltaTime, allEntities, spawn,
+    updateGameState, 
+    deltaTime, allEntities, spawn, unspawn,
     (.:.), Combine ((+++)), 
     Entity, toEntity, updateEntity, 
     requireFeature, RequireFeatures (..), 
@@ -32,7 +33,6 @@ import Data.Dynamic
 import Data.Maybe
 import Data.Record.Label
 
-
 -- Game specific stuff (or is it?)
 
 data GameState = GameState {
@@ -48,14 +48,12 @@ updateGameState state = do
 deltaTime :: Game Double
 deltaTime = do
     state <- ask
-    let deltaTimeVar = gameDeltaTime state
-    lift (readTVar deltaTimeVar)
+    lift $ readTVar (gameDeltaTime state)
 
 allEntities :: Game [Entity ()]
 allEntities = do
     state <- ask
-    let entitiesVar = gameEntities state
-    lift (readTVar entitiesVar)
+    lift $ readTVar (gameEntities state)
 
 spawn :: Entity () -> Game (Entity ())
 spawn entity = do
@@ -64,6 +62,9 @@ spawn entity = do
     entities <- lift (readTVar entitiesVar)
     lift $ writeTVar entitiesVar (entity : entities)
     return entity
+
+unspawn :: Entity a -> Game ()
+unspawn entity = return () -- TODO
 
 
 -- Reusable stuff
@@ -100,11 +101,34 @@ object constructor = do
     let Entity m ds = result
     return (Entity m ds)
 
-method :: (Entity p -> Game a) -> Var (Entity p) -> Game a
+class Method f where
+    method :: (Entity p -> f) -> Var (Entity p) -> f
+
+instance Method (Game a) where
+    method function this = do
+        this' <- lift $ readTVar this
+        function this'
+
+instance Method (b -> Game a) where
+    method function this = \b -> do
+        this' <- lift $ readTVar this
+        function this' b 
+
+instance Method (c -> b -> Game a) where
+    method function this = \c b -> do
+        this' <- lift $ readTVar this
+        function this' c b
+
+instance Method (d -> c -> b -> Game a) where
+    method function this = \d c b -> do
+        this' <- lift $ readTVar this
+        function this' d c b 
+
+{-method :: (Entity p -> Game a) -> Var (Entity p) -> Game a
 method function this = do
     this' <- lift $ readTVar this
     function this'
-    
+-}
 
 get :: (record :-> Var value) -> record -> Game value
 get label record = lift $ readTVar (getL label record)

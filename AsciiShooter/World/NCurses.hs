@@ -3,6 +3,7 @@ module AsciiShooter.World.NCurses (withWorld) where
 import Feature
 import AsciiShooter.World
 import AsciiShooter.World.Ascii
+import AsciiShooter.Key
 
 import UI.NCurses hiding (Key, Color, Event)
 import Control.Concurrent
@@ -32,10 +33,10 @@ withWorld gameFunction = do
             input = atomically $ do
                 empty <- isEmptyTChan channel
                 if empty 
-                    then return (WorldInput { inputKeys = Nothing })
+                    then return (WorldInput { inputKeys = [] })
                     else do
                         state <- readTChan channel
-                        return (WorldInput { inputKeys = Just state }),
+                        return (WorldInput { inputKeys = [state] }),
             output = \state -> do
                 putMVar stateVariable state
                 takeMVar doneVariable
@@ -95,21 +96,21 @@ getKey window = do
     case event of
         Just (EventSpecialKey key) -> 
             case key of
-                KeyUpArrow -> return (Just (KeyDirection North, 1))
-                KeyDownArrow -> return (Just (KeyDirection South, 1))
-                KeyLeftArrow -> return (Just (KeyDirection West, 1))
-                KeyRightArrow -> return (Just (KeyDirection East, 1))
-                KeyHome -> return (Just (KeyBreak, 1))
-                KeyEnd -> return (Just (KeyFire, 1))
+                KeyUpArrow -> return (Just (1, KeyNorth))
+                KeyDownArrow -> return (Just (1, KeySouth))
+                KeyLeftArrow -> return (Just (1, KeyWest))
+                KeyRightArrow -> return (Just (1, KeyEast))
+                KeyHome -> return (Just (1, KeyBreak))
+                KeyEnd -> return (Just (1, KeyFire))
                 _ -> return Nothing
         Just (EventCharacter character) -> 
             case toLower character of
-                'r' -> return (Just (KeyDirection North, 2))
-                'f' -> return (Just (KeyDirection South, 2))
-                'd' -> return (Just (KeyDirection West, 2))
-                'g' -> return (Just (KeyDirection East, 2))
-                'q' -> return (Just (KeyBreak, 2))
-                'a' -> return (Just (KeyFire, 2))
+                'r' -> return (Just (2, KeyNorth))
+                'f' -> return (Just (2, KeySouth))
+                'd' -> return (Just (2, KeyWest))
+                'g' -> return (Just (2, KeyEast))
+                'q' -> return (Just (2, KeyBreak))
+                'a' -> return (Just (2, KeyFire))
                 _ -> return Nothing
         _ -> return Nothing
 
