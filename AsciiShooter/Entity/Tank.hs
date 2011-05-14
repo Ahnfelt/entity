@@ -25,7 +25,8 @@ new player position velocity = object $ \this key -> do
     return $ toEntity $ keyListener .:. direction .:. physics .:. hitListener .:. animation .:. nil
 
 onHit this Hit { receiversFault = myFault, hitEntity = entity } = do
-    when (not myFault) $ unspawn this
+    --when (not myFault) $ unspawn this
+    return ()
 
 onKey player this (player', key) = when (player == player') $ case key of
     KeyNorth -> setDirectionVelocity North (0, 15)
