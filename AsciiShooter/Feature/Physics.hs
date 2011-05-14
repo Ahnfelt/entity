@@ -78,31 +78,31 @@ move boxes size movement (x, y) =
     let startBox@((x1, y1), (x2, y2)) = boxAround (x, y) size in
     let boxes' = filter (not . overlap startBox) boxes in
     let x' = if vectorX movement <= 0 
-        then
-            let box = ((x1 + vectorX movement, y1), (x2, y2)) in
-            let boxes'' = filter (overlap box) boxes' in
-            let x1' = maximum (x1 + vectorX movement : map (vectorX . snd) boxes'') in
-            min x1 (x1' + epsilon) + vectorX size / 2
-        else
-            let box = ((x1, y1), (x2 + vectorX movement, y2)) in
-            let boxes'' = filter (overlap box) boxes' in
-            let x2' = minimum (x2 + vectorX movement : map (vectorX . fst) boxes'') in
-            max x2 (x2' - epsilon) - vectorX size / 2 in
+            then
+                let box = ((x1 + vectorX movement, y1), (x2, y2)) in
+                let boxes'' = filter (overlap box) boxes' in
+                let x1' = maximum (x1 + vectorX movement : map (vectorX . snd) boxes'') in
+                min x1 (x1' + epsilon) + vectorX size / 2
+            else
+                let box = ((x1, y1), (x2 + vectorX movement, y2)) in
+                let boxes'' = filter (overlap box) boxes' in
+                let x2' = minimum (x2 + vectorX movement : map (vectorX . fst) boxes'') in
+                max x2 (x2' - epsilon) - vectorX size / 2 in
             
     -- Then move vertically as far as possible (at most by vectorY movement)
     let startBox@((x1, y1), (x2, y2)) = boxAround (x', y) size in
     let boxes' = filter (not . overlap startBox) boxes in
     let y' = if vectorY movement <= 0 
-        then
-            let box = ((x1, y1 + vectorY movement), (x2, y2)) in
-            let boxes'' = filter (overlap box) boxes' in
-            let y1' = maximum (y1 + vectorY movement : map (vectorY . snd) boxes'') in
-            min y1 (y1' + epsilon) + vectorY size / 2
-        else
-            let box = ((x1, y1), (x2, y2 + vectorY movement)) in
-            let boxes'' = filter (overlap box) boxes' in
-            let y2' = minimum (y2 + vectorY movement : map (vectorY . fst) boxes'') in
-            max y2 (y2' - epsilon) - vectorY size / 2 in
+            then
+                let box = ((x1, y1 + vectorY movement), (x2, y2)) in
+                let boxes'' = filter (overlap box) boxes' in
+                let y1' = maximum (y1 + vectorY movement : map (vectorY . snd) boxes'') in
+                min y1 (y1' + epsilon) + vectorY size / 2
+            else
+                let box = ((x1, y1), (x2, y2 + vectorY movement)) in
+                let boxes'' = filter (overlap box) boxes' in
+                let y2' = minimum (y2 + vectorY movement : map (vectorY . fst) boxes'') in
+                max y2 (y2' - epsilon) - vectorY size / 2 in
 
     (x', y')
             
