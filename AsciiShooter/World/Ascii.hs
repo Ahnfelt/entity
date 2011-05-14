@@ -64,10 +64,10 @@ tankAsciiEast Sprite.CaterpillarState2 = [
     " |o==",
     " +¤+ "]
 
-tankSprite Sprite.North state = toSprite (tankAsciiNorth state)
-tankSprite Sprite.South state = toSprite (reverse (tankAsciiNorth state))
-tankSprite Sprite.West state = toSprite (map reverse (tankAsciiEast state))
-tankSprite Sprite.East state = toSprite (tankAsciiEast state)
+tankSprite North state = toSprite (tankAsciiNorth state)
+tankSprite South state = toSprite (reverse (tankAsciiNorth state))
+tankSprite West state = toSprite (map reverse (tankAsciiEast state))
+tankSprite East state = toSprite (tankAsciiEast state)
 
 toSprite :: [String] -> Color -> Sprite 
 toSprite lines color = 

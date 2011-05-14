@@ -29,7 +29,7 @@ new player position velocity = object $ \this key -> do
 onHit this Hit { receiversFault = myFault, hitEntity = entity } = do
     when (not myFault) $ unspawn this
 
-onKey :: (Has Physics.Type e, Has Animation.Type e) 
+onKey :: (Has Direction.Type e, Has Physics.Type e, Has Animation.Type e) 
     => Player -> Entity e -> (Player, Key) -> Game () 
 onKey player this (player', key) = when (player == player') $ case key of
     KeyNorth -> setDirectionVelocity North (0, 15)
@@ -42,7 +42,8 @@ onKey player this (player', key) = when (player == player') $ case key of
         direction <- get Direction.direction (requireFeature this)
         let vector = directionVector direction .* 2
         projectile <- Projectile.new player (position .+. vector .* 2) (vector .* 30)
-        void (spawn projectile)
+        spawn projectile
+        return ()
     where
         setDirectionVelocity direction velocity = do
             set Direction.direction direction (requireFeature this)
