@@ -17,7 +17,9 @@ data Type = Type {
 
 $(mkLabels [''Type])
 
-instance Updateable Type
+instance Updateable Type where
+    updater self = Just $ do
+        update sprite animate self
 
 new :: Physics.Type -> Sprite -> Game Type
 new physics sprite = 
@@ -32,3 +34,5 @@ getPositionedSprite self = do
     s <- get sprite self
     return (p, s)
 
+animate (Tank direction caterpiller player) = Tank direction (nextCaterpillarState caterpiller) player -- TODO animate based on drived distance!
+animate sprite = sprite
