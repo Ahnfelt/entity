@@ -3,7 +3,6 @@ module AsciiShooter.Entity.Tank (new) where
 import Feature
 import AsciiShooter.Key
 import AsciiShooter.Player
-import AsciiShooter.World
 import AsciiShooter.Sprite
 import AsciiShooter.Utilities.Mechanics
 import AsciiShooter.Feature.Physics (Hit (..))

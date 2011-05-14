@@ -1,5 +1,6 @@
 import Feature
 import qualified AsciiShooter.Entity.Tank as Tank
+import qualified AsciiShooter.Entity.Wall as Wall
 import qualified AsciiShooter.Feature.Listener as Listener
 import qualified AsciiShooter.Feature.Animation as Animation
 import AsciiShooter.Utilities.Mechanics
@@ -38,6 +39,12 @@ main = do
     runGame state (spawn p)
 
     p <- runGame state (Tank.new 2 (100, 30) (0, 0))
+    runGame state (spawn p)
+
+    p <- runGame state (Wall.new ((0, 0), (99.5, 4.5)))
+    runGame state (spawn p)
+
+    p <- runGame state (Wall.new ((120.5, 10.5), (130.5, 50.5)))
     runGame state (spawn p)
 
     newTime <- getCurrentTime
