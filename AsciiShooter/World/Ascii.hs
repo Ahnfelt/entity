@@ -4,6 +4,7 @@ import Feature
 import qualified AsciiShooter.Feature.Physics as Physics
 import AsciiShooter.Utilities.Mechanics
 import AsciiShooter.World
+import qualified AsciiShooter.Sprite as Sprite
 
 import Data.Foldable 
 import Data.Array.Diff
@@ -18,13 +19,13 @@ data Sprite = Sprite Int Int [((Int, Int), (Char, Color))]
 
 playerColor 1 = Red
 playerColor 2 = Green
+playerColor _ = Blue
 
-drawEntity :: Picture -> Entity () -> Game Picture
-drawEntity picture entity = case getFeature entity of
-    Just feature -> do
-        position <- Physics.getPosition feature
-        return $ drawTank picture Red (position, North)
-    Nothing -> return picture
+drawEntity :: (Position, Sprite.Sprite) -> Picture -> Picture
+drawEntity (position, sprite) picture = case sprite of
+    Sprite.Tank direction player -> drawTank picture (playerColor player) (position, direction)
+    Sprite.Projectile player -> drawProjectile picture (playerColor player) position
+    Sprite.Wall size -> drawWall picture position size
 
 background :: Integral a => a -> a -> DiffArray (Int, Int) (Char, Color)     
 background width height = 
@@ -50,10 +51,10 @@ tankAsciiEast = [
     " |o==",
     " ¤¤¤ "]
 
-tankSprite North = toSprite tankAsciiNorth
-tankSprite South = toSprite (reverse tankAsciiNorth)
-tankSprite West = toSprite (map reverse tankAsciiEast)
-tankSprite East = toSprite tankAsciiEast
+tankSprite Sprite.North = toSprite tankAsciiNorth
+tankSprite Sprite.South = toSprite (reverse tankAsciiNorth)
+tankSprite Sprite.West = toSprite (map reverse tankAsciiEast)
+tankSprite Sprite.East = toSprite tankAsciiEast
 
 toSprite :: [String] -> Color -> Sprite 
 toSprite lines color = 
@@ -76,7 +77,7 @@ drawProjectile :: Picture -> Color -> Vector -> Picture
 drawProjectile picture playerColor location = 
     drawSprite picture location (toSprite projectileAscii playerColor)
 
-drawTank :: Picture -> Color -> (Vector, Direction) -> Picture
+drawTank :: Picture -> Color -> (Vector, Sprite.Direction) -> Picture
 drawTank picture playerColor (location, direction) = 
     drawSprite picture location (tankSprite direction playerColor)
 

@@ -16,6 +16,7 @@ module Feature (
     updateGameState, 
     deltaTime, allEntities, spawn, unspawn,
     (.:.), Combine ((+++)), 
+    EntityKey, entityKey,
     Entity, toEntity, updateEntity, 
     requireFeature, RequireFeatures (..), 
     getFeature, GetFeatures (..), 
@@ -157,6 +158,9 @@ updateEntity (Entity _ u _) = u
 
 
 data Entity p = Entity EntityKey (Game ()) [Dynamic]
+
+entityKey :: Entity () -> EntityKey
+entityKey (Entity key _ _) = key
 
 
 class Updateable e where

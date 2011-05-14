@@ -1,17 +1,22 @@
 module AsciiShooter.World where
 
 import Feature
+import AsciiShooter.Player
 import AsciiShooter.Key
+import AsciiShooter.Sprite
+import AsciiShooter.Utilities.Mechanics
 
-data Direction = North | South | East | West deriving (Eq, Ord, Show)
-type Player = Int
+import Data.Map (Map)
+
 type PlayerKey = (Player, Key)
 
 data WorldInput = WorldInput {
     inputKeys :: [PlayerKey]
     }
 
-type WorldOutput = GameState
+data WorldOutput = WorldOutput {
+    outputSprites :: Map EntityKey (Position, Sprite)
+    }
     
 data World = World {
     input :: IO WorldInput,

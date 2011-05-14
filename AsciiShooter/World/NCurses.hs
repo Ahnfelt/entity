@@ -13,7 +13,7 @@ import Control.Monad.IO.Class
 import Control.Monad hiding (mapM_, forM_)
 import Data.Array.Diff
 import Data.Char (toLower)
-import Data.Foldable 
+import Data.Foldable (mapM_, forM_)
 import qualified Data.Map as Map
 import qualified Data.Text as T
 import Control.Monad.Trans
@@ -72,13 +72,11 @@ initializeColors = do
         _ -> red
 
 draw :: Window -> (Color -> ColorID) -> WorldOutput -> Curses ()
-draw window colors worldOutput = do
+draw window colors WorldOutput { outputSprites = sprites } = do
     (rows, columns) <- screenSize
     -- Workaround (rows - 1) because drawing on the bottom edge breaks NCurses
-    picture' <- liftIO $ runGame worldOutput $ do
-        let picture = background columns (rows - 1)   
-        entities <- lift $ readTVar (gameEntities worldOutput)
-        foldM drawEntity picture (Map.elems entities)
+    let picture = background columns (rows - 1)   
+    let picture' = foldr drawEntity picture (Map.elems sprites)
     drawPicture window colors picture'
 
 drawPicture :: Window -> (Color -> ColorID) -> Picture -> Curses ()

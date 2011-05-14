@@ -1,6 +1,9 @@
 import Feature
 import qualified AsciiShooter.Entity.Tank as Tank
 import qualified AsciiShooter.Feature.Listener as Listener
+import qualified AsciiShooter.Feature.Animation as Animation
+import AsciiShooter.Utilities.Mechanics
+import AsciiShooter.Sprite
 import AsciiShooter.World
 import AsciiShooter.World.NCurses
 
@@ -22,19 +25,19 @@ main = do
         gameDeltaTime = deltaTimeVar 
         }
 
-    p <- runGame state (Tank.new 1 (10, 40) (5, 0))
+    p <- runGame state (Tank.new 3 (10, 40) (5, 0))
     runGame state (spawn p)
 
-    p <- runGame state (Tank.new 2 (10, 10) (5, 5))
+    p <- runGame state (Tank.new 3 (10, 10) (5, 5))
     runGame state (spawn p)
 
     p <- runGame state (Tank.new 3 (100, 50) (-10, -1.72))
     runGame state (spawn p)
 
-    p <- runGame state (Tank.new 3 (90, 20) (0, 0))
+    p <- runGame state (Tank.new 1 (90, 20) (0, 0))
     runGame state (spawn p)
 
-    p <- runGame state (Tank.new 3 (90, 30) (0, 0))
+    p <- runGame state (Tank.new 2 (100, 30) (0, 0))
     runGame state (spawn p)
 
     newTime <- getCurrentTime
@@ -56,8 +59,18 @@ main = do
         forM_ (inputKeys input') $ \key -> mapM_ (runGame state . fireInput key) (Map.elems entities)
         updateGameState state
 
-        output world state
+        entities <- atomically $ readTVar entitiesVar
+        sprites <- mapM (runGame state . toSprite) (Map.elems entities)
 
+        output world WorldOutput { outputSprites = Map.fromList (catMaybes sprites) }
+
+
+toSprite :: Entity () -> Game (Maybe (EntityKey, (Position, Sprite)))
+toSprite entity = case getFeature entity of
+    Just animation -> do
+        pair <- Animation.getPositionedSprite animation
+        return (Just (entityKey entity, pair))
+    Nothing -> return Nothing
 
 fireInput :: PlayerKey -> Entity () -> Game ()
 fireInput playerKey entity = case getFeature entity of
