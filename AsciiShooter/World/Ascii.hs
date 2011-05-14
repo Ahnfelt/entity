@@ -13,17 +13,18 @@ import Data.List (transpose)
 import qualified Data.Set as Set
 import Prelude hiding (maximum)
 
-data Color = Red | Green | Blue | Transparent deriving (Eq, Ord, Show)
+data Color = Red | Green | Yellow | Blue | Magenta | Cyan | Black | White | Transparent deriving (Eq, Ord, Show)
 type Picture = DiffArray (Int, Int) (Char, Color)
 data Sprite = Sprite Int Int [((Int, Int), (Char, Color))]
 
 playerColor 1 = Red
 playerColor 2 = Green
-playerColor _ = Blue
+playerColor 3 = Blue
+playerColor 4 = Yellow
 
 drawEntity :: (Position, Sprite.Sprite) -> Picture -> Picture
 drawEntity (position, sprite) picture = case sprite of
-    Sprite.Tank direction player -> drawTank picture (playerColor player) (position, direction)
+    Sprite.Tank direction state player -> drawTank picture (playerColor player) (position, direction) state
     Sprite.Projectile player -> drawProjectile picture (playerColor player) position
     Sprite.Wall size -> drawWall picture position size
 
@@ -39,22 +40,34 @@ projectileAscii = [
     "*"
     ]        
         
-tankAsciiNorth = [
+tankAsciiNorth Sprite.CaterpillarState1 = [
     " | ",
     "¤|¤",
-    "¤O¤",
+    "+O+",
     "¤-¤",
     "   "]
 
-tankAsciiEast = [
-    " ¤¤¤ ",
-    " |o==",
-    " ¤¤¤ "]
+tankAsciiNorth Sprite.CaterpillarState2 = [
+    " | ",
+    "+|+",
+    "¤O¤",
+    "+-+",
+    "   "]
 
-tankSprite Sprite.North = toSprite tankAsciiNorth
-tankSprite Sprite.South = toSprite (reverse tankAsciiNorth)
-tankSprite Sprite.West = toSprite (map reverse tankAsciiEast)
-tankSprite Sprite.East = toSprite tankAsciiEast
+tankAsciiEast Sprite.CaterpillarState1 = [
+    " ¤+¤ ",
+    " |o==",
+    " ¤+¤ "]
+
+tankAsciiEast Sprite.CaterpillarState2 = [
+    " +¤+ ",
+    " |o==",
+    " +¤+ "]
+
+tankSprite Sprite.North state = toSprite (tankAsciiNorth state)
+tankSprite Sprite.South state = toSprite (reverse (tankAsciiNorth state))
+tankSprite Sprite.West state= toSprite (map reverse (tankAsciiEast state))
+tankSprite Sprite.East state= toSprite (tankAsciiEast state)
 
 toSprite :: [String] -> Color -> Sprite 
 toSprite lines color = 
@@ -77,15 +90,15 @@ drawProjectile :: Picture -> Color -> Vector -> Picture
 drawProjectile picture playerColor location = 
     drawSprite picture location (toSprite projectileAscii playerColor)
 
-drawTank :: Picture -> Color -> (Vector, Sprite.Direction) -> Picture
-drawTank picture playerColor (location, direction) = 
-    drawSprite picture location (tankSprite direction playerColor)
+drawTank :: Picture -> Color -> (Vector, Sprite.Direction) -> Sprite.CaterpillarState -> Picture
+drawTank picture playerColor (location, direction) state =
+    drawSprite picture location (tankSprite direction state playerColor)
 
 drawWall :: Picture -> Vector -> Vector -> Picture
 drawWall picture position size = 
     let (width, height) = (round (vectorX size), round (vectorY size)) in
     let spriteLines = replicate height (replicate width '#') in
-    let sprite = toSprite spriteLines Blue in
+    let sprite = toSprite spriteLines White in
     drawSprite picture position sprite
 
 drawSprite :: Picture -> Vector -> Sprite -> Picture

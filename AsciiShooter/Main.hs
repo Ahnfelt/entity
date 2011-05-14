@@ -29,7 +29,7 @@ main = do
     p <- runGame state (Tank.new 3 (10, 40) (5, 0))
     runGame state (spawn p)
 
-    p <- runGame state (Tank.new 3 (10, 10) (5, 5))
+    p <- runGame state (Tank.new 4 (10, 10) (5, 5))
     runGame state (spawn p)
 
     p <- runGame state (Tank.new 3 (100, 50) (-10, -1.72))

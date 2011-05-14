@@ -59,17 +59,27 @@ withWorld gameFunction = do
                         Nothing -> return ()
                     loop window colors channel stateVariable doneVariable stopVariable
 
+
 initializeColors :: Curses (Color -> ColorID)
 initializeColors = do
     red <- newColorID ColorRed ColorBlack 1
     green <- newColorID ColorGreen ColorBlack 2
-    black <- newColorID ColorBlack ColorBlack 3
-    blue <- newColorID ColorBlue ColorBlack 4
+    blue <- newColorID ColorBlue ColorBlack 3
+    yellow <- newColorID ColorYellow ColorBlack 4
+    magenta <- newColorID ColorMagenta ColorBlack 5
+    cyan <- newColorID ColorCyan ColorBlack 6
+    black <- newColorID ColorBlack ColorBlack 7
+    white <- newColorID ColorWhite ColorBlack 8
     return $ \color -> case color of 
-        Transparent -> black
+        Red -> red
         Green -> green
         Blue -> blue
-        _ -> red
+        Yellow -> yellow
+        Magenta -> magenta
+        Cyan -> cyan
+        Black -> black
+        White -> white
+        Transparent -> black
 
 draw :: Window -> (Color -> ColorID) -> WorldOutput -> Curses ()
 draw window colors WorldOutput { outputSprites = sprites } = do

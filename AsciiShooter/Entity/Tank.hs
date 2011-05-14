@@ -1,4 +1,6 @@
-module AsciiShooter.Entity.Tank (new) where
+{-# LANGUAGE FlexibleContexts #-}
+
+module AsciiShooter.Entity.Tank  where
 
 import Feature
 import AsciiShooter.Key
@@ -17,12 +19,14 @@ new player position velocity = object $ \this -> do
     physics <- Physics.new position velocity zero (3, 3)
     keyListener <- Listener.new (method (onKey player) this)
     hitListener <- Listener.new (method onHit this)
-    animation <- Animation.new physics (Tank North player)
+    animation <- Animation.new physics (Tank North CaterpillarState1 player)
     return $ toEntity $ keyListener .:. physics .:. hitListener .:. animation .:. nil
 
 onHit this Hit { receiversFault = myFault, hitEntity = entity } = do
     when myFault $ unspawn this
 
+onKey :: (Has Physics.Type e, Has Animation.Type e) 
+    => Player -> Entity e -> (Player, Key) -> Game () 
 onKey player this (player', key) = when (player == player') $ case key of
     KeyNorth -> setDirectionVelocity North (0, 15)
     KeySouth -> setDirectionVelocity South (0, -15)
@@ -33,7 +37,8 @@ onKey player this (player', key) = when (player == player') $ case key of
     where
         setDirectionVelocity direction velocity = do
             Physics.modifyVelocity (const velocity) (requireFeature this)
-            set Animation.sprite (Tank direction player) (requireFeature this)
+            -- set Animation.sprite (Tank direction player) (requireFeature this)
+            update Animation.sprite (\(Tank _ s _) -> Tank direction s player) (requireFeature this)
         setVelocity velocity = do
             Physics.modifyVelocity (const velocity) (requireFeature this)
 
