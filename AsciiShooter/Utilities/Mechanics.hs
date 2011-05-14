@@ -41,6 +41,16 @@ epsilon = 0.00001
 
 -- Box stuff
 
+boxAround :: Position -> Vector -> Box
+boxAround position size = ((position .-. size ./ 2), (position .+. size ./ 2))
+
+overlap :: Box -> Box -> Bool
+overlap (v1, v2) (u1, u2) = 
+    overlapAxis (vectorX v1, vectorX v2) (vectorX u1, vectorX u2) &&
+    overlapAxis (vectorY v1, vectorY v2) (vectorY u1, vectorY u2)
+    where
+        overlapAxis (start1, end1) (start2, end2) = start1 <= end2 && start2 <= end1
+
 center :: Box -> Vector
 center ((x1, y1), (x2, y2)) = ((x1 + x2) / 2, (y1 + y2) / 2)
 

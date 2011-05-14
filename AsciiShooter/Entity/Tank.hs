@@ -13,15 +13,15 @@ import qualified AsciiShooter.Feature.Animation as Animation
 import Control.Monad
 
 new :: Player -> Position -> Velocity -> Game (Entity ())
-new player position velocity = object $ \this -> do
-    physics <- Physics.new position velocity zero (3, 3)
+new player position velocity = object $ \this key -> do
+    physics <- Physics.new position velocity zero (3, 3) key
     keyListener <- Listener.new (method (onKey player) this)
     hitListener <- Listener.new (method onHit this)
     animation <- Animation.new physics (Tank North player)
     return $ toEntity $ keyListener .:. physics .:. hitListener .:. animation .:. nil
 
 onHit this Hit { receiversFault = myFault, hitEntity = entity } = do
-    when myFault $ unspawn this
+    when (not myFault) $ unspawn this
 
 onKey player this (player', key) = when (player == player') $ case key of
     KeyNorth -> setDirectionVelocity North (0, 15)
