@@ -9,8 +9,8 @@ import qualified AsciiShooter.Feature.Animation as Animation
 import Control.Monad
 
 new :: Box -> Game (Entity ())
-new box = object $ \this -> do
-    physics <- Physics.new (center box) zero zero (dimensions box)
+new box = object $ \this key -> do
+    physics <- Physics.new (center box) zero zero (dimensions box) key
     animation <- Animation.new physics (Wall (dimensions box))
     return $ toEntity $ physics .:. animation .:. nil
 

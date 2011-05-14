@@ -14,7 +14,7 @@
 module Feature (
     GameState (..), Game, runGame, Var, 
     updateGameState, 
-    deltaTime, allEntities, spawn, unspawn,
+    deltaTime, allEntities, spawn, unspawn, entityByKey,
     (.:.), Combine ((+++)), 
     EntityKey, entityKey,
     Entity, toEntity, updateEntity, 
@@ -60,6 +60,12 @@ allEntities = do
     entities <- lift $ readTVar (gameEntities state)
     return (Map.elems entities)
 
+entityByKey :: EntityKey -> Game (Maybe (Entity ()))
+entityByKey key = do
+    state <- ask
+    entities <- lift $ readTVar (gameEntities state)
+    return (Map.lookup key entities)
+
 spawn :: Entity () -> Game (Entity ())
 spawn entity@(Entity key _ _) = do
     state <- ask
@@ -102,16 +108,16 @@ f .$. v = do
     return $ f' v'
 
 
-object :: (Var (Entity p) -> Game (Entity p)) -> Game (Entity ())
+object :: (Var (Entity p) -> EntityKey -> Game (Entity p)) -> Game (Entity ())
 object constructor = do
-    this <- lift $ newTVar undefined
-    result <- constructor this
-    let Entity _ m ds = result
     key <- do
         state <- ask
         key <- lift $ readTVar (gameNextKey state)
         lift $ writeTVar (gameNextKey state) (key + 1)
         return key
+    this <- lift $ newTVar (Entity key undefined undefined)
+    result <- constructor this key
+    let Entity _ m ds = result
     lift $ writeTVar this (Entity key m ds)
     return (Entity key m ds)
 
@@ -159,7 +165,7 @@ updateEntity (Entity _ u _) = u
 
 data Entity p = Entity EntityKey (Game ()) [Dynamic]
 
-entityKey :: Entity () -> EntityKey
+entityKey :: Entity a -> EntityKey
 entityKey (Entity key _ _) = key
 
 

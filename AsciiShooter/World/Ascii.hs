@@ -66,8 +66,8 @@ tankAsciiEast Sprite.CaterpillarState2 = [
 
 tankSprite Sprite.North state = toSprite (tankAsciiNorth state)
 tankSprite Sprite.South state = toSprite (reverse (tankAsciiNorth state))
-tankSprite Sprite.West state= toSprite (map reverse (tankAsciiEast state))
-tankSprite Sprite.East state= toSprite (tankAsciiEast state)
+tankSprite Sprite.West state = toSprite (map reverse (tankAsciiEast state))
+tankSprite Sprite.East state = toSprite (tankAsciiEast state)
 
 toSprite :: [String] -> Color -> Sprite 
 toSprite lines color = 
@@ -90,7 +90,7 @@ drawProjectile :: Picture -> Color -> Vector -> Picture
 drawProjectile picture playerColor location = 
     drawSprite picture location (toSprite projectileAscii playerColor)
 
-drawTank :: Picture -> Color -> (Vector, Sprite.Direction) -> Sprite.CaterpillarState -> Picture
+drawTank :: Picture -> Color -> (Vector, Direction) -> Sprite.CaterpillarState -> Picture
 drawTank picture playerColor (location, direction) state =
     drawSprite picture location (tankSprite direction state playerColor)
 
