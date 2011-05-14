@@ -51,10 +51,10 @@ tankAsciiEast = [
     " |o==",
     " ¤¤¤ "]
 
-tankSprite Sprite.North = toSprite tankAsciiNorth
-tankSprite Sprite.South = toSprite (reverse tankAsciiNorth)
-tankSprite Sprite.West = toSprite (map reverse tankAsciiEast)
-tankSprite Sprite.East = toSprite tankAsciiEast
+tankSprite North = toSprite tankAsciiNorth
+tankSprite South = toSprite (reverse tankAsciiNorth)
+tankSprite West = toSprite (map reverse tankAsciiEast)
+tankSprite East = toSprite tankAsciiEast
 
 toSprite :: [String] -> Color -> Sprite 
 toSprite lines color = 
@@ -77,7 +77,7 @@ drawProjectile :: Picture -> Color -> Vector -> Picture
 drawProjectile picture playerColor location = 
     drawSprite picture location (toSprite projectileAscii playerColor)
 
-drawTank :: Picture -> Color -> (Vector, Sprite.Direction) -> Picture
+drawTank :: Picture -> Color -> (Vector, Direction) -> Picture
 drawTank picture playerColor (location, direction) = 
     drawSprite picture location (tankSprite direction playerColor)
 

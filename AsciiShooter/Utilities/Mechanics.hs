@@ -15,6 +15,13 @@ type Magnitude = Double
 type Duration = Double
 
 
+data Direction = North | South | East | West deriving (Eq, Ord, Show)
+
+directionVector North = (0, 1)
+directionVector South = (0, -1)
+directionVector East = (1, 0)
+directionVector West = (-1, 0)
+
 -- Vector from angle and magnitude
 vector :: Angle -> Magnitude -> Vector
 vector a m = (cos a * m, sin a * m)
