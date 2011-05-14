@@ -10,6 +10,7 @@ import qualified AsciiShooter.Feature.Direction as Direction
 import qualified AsciiShooter.Feature.Physics as Physics
 import qualified AsciiShooter.Feature.Listener as Listener
 import qualified AsciiShooter.Feature.Animation as Animation
+import qualified AsciiShooter.Feature.Damage as Damage
 import qualified AsciiShooter.Entity.Projectile as Projectile
 
 import Control.Monad
@@ -25,8 +26,9 @@ new player position velocity = object $ \this key -> do
     return $ toEntity $ keyListener .:. direction .:. physics .:. hitListener .:. animation .:. nil
 
 onHit this Hit { receiversFault = myFault, hitEntity = entity } = do
-    --when (not myFault) $ unspawn this
-    return ()
+    case getFeature entity :: Maybe Damage.Type of
+        Just damage -> unspawn this
+        Nothing -> return ()
 
 onKey player this (player', key) = when (player == player') $ case key of
     KeyNorth -> setDirectionVelocity North (0, 15)
