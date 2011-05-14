@@ -19,7 +19,7 @@ new player position velocity = object $ \this key -> do
     physics <- Physics.new position velocity zero (1, 1) key
     hitListener <- Listener.new (method onHit this)
     animation <- Animation.new physics (Projectile player)
-    damage <- Damage.new
+    damage <- Damage.new 10
     return $ toEntity $ physics .:. hitListener .:. animation .:. damage .:. nil
 
 onHit this Hit {} = unspawn this

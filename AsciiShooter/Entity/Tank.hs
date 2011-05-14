@@ -11,6 +11,7 @@ import qualified AsciiShooter.Feature.Physics as Physics
 import qualified AsciiShooter.Feature.Listener as Listener
 import qualified AsciiShooter.Feature.Animation as Animation
 import qualified AsciiShooter.Feature.Damage as Damage
+import qualified AsciiShooter.Feature.Health as Health
 import qualified AsciiShooter.Entity.Projectile as Projectile
 
 import Control.Monad
@@ -18,16 +19,29 @@ import Control.Monad
 new :: Player -> Position -> Velocity -> Game (Entity ())
 new player position velocity = object $ \this key -> do
     let initialDirection = North
+    health <- Health.new 20
     direction <- Direction.new initialDirection
     physics <- Physics.new position velocity zero (3, 3) key
     keyListener <- Listener.new (method (onKey player) this)
     hitListener <- Listener.new (method onHit this)
     animation <- Animation.new physics (Tank initialDirection player)
-    return $ toEntity $ keyListener .:. direction .:. physics .:. hitListener .:. animation .:. nil
+    return $ toEntity $ 
+        keyListener .:. 
+        direction .:. 
+        physics .:. 
+        hitListener .:. 
+        health .:. 
+        animation .:. 
+        nil
 
 onHit this Hit { receiversFault = myFault, hitEntity = entity } = do
-    case getFeature entity :: Maybe Damage.Type of
-        Just damage -> unspawn this
+    case getFeature entity of
+        Just damage -> do
+            amount <- get Damage.damage damage
+            let health = requireFeature this
+            Health.add (-amount) health
+            h <- get Health.health health
+            when (h <= 0) $ unspawn this
         Nothing -> return ()
 
 onKey player this (player', key) = when (player == player') $ case key of
