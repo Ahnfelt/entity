@@ -14,8 +14,9 @@ import Control.Monad hiding (mapM_, forM_)
 import Data.Array.Diff
 import Data.Char (toLower)
 import Data.Foldable 
-import Control.Monad.Trans
+import qualified Data.Map as Map
 import qualified Data.Text as T
+import Control.Monad.Trans
 import Prelude hiding (mapM_)
 import Debug.Trace
 
@@ -77,7 +78,7 @@ draw window colors worldOutput = do
     picture' <- liftIO $ runGame worldOutput $ do
         let picture = background columns (rows - 1)   
         entities <- lift $ readTVar (gameEntities worldOutput)
-        foldM drawEntity picture entities
+        foldM drawEntity picture (Map.elems entities)
     drawPicture window colors picture'
 
 drawPicture :: Window -> (Color -> ColorID) -> Picture -> Curses ()

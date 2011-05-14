@@ -6,15 +6,21 @@ import AsciiShooter.World.NCurses
 
 import Control.Concurrent.STM
 import Control.Monad
-import Data.Maybe
 import Control.Monad.Reader
+import Data.Maybe
+import qualified Data.Map as Map
 import Data.Time.Clock
 import Data.IORef
 
 main = do
-    entitiesVar <- newTVarIO []
+    nextKeyVar <- newTVarIO 0
+    entitiesVar <- newTVarIO Map.empty
     deltaTimeVar <- newTVarIO 0
-    let state = GameState { gameEntities = entitiesVar, gameDeltaTime = deltaTimeVar }
+    let state = GameState { 
+        gameNextKey = nextKeyVar,
+        gameEntities = entitiesVar, 
+        gameDeltaTime = deltaTimeVar 
+        }
 
     p <- runGame state (Tank.new 1 (10, 40) (5, 0))
     runGame state (spawn p)
@@ -47,7 +53,7 @@ main = do
         atomically $ writeTVar deltaTimeVar (diffTime newTime oldTime)
 
         entities <- atomically $ readTVar entitiesVar
-        forM_ (inputKeys input') $ \key -> mapM_ (runGame state . fireInput key) entities
+        forM_ (inputKeys input') $ \key -> mapM_ (runGame state . fireInput key) (Map.elems entities)
         updateGameState state
 
         output world state

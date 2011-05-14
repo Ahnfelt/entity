@@ -26,7 +26,7 @@ onKey player' this (player, key) = when (player == player') $ case key of
     KeyEast -> setVelocity (15, 0)
     KeyWest -> setVelocity (-15, 0)
     KeyBreak -> setVelocity (0, 0)
-    KeyFire -> return ()
+    KeyFire -> unspawn this
     where
         setVelocity velocity = do
             let physics = requireFeature this

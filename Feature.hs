@@ -32,18 +32,21 @@ import Data.HList
 import Data.Dynamic
 import Data.Maybe
 import Data.Record.Label
+import Data.Map (Map)
+import qualified Data.Map as Map
 
--- Game specific stuff (or is it?)
+-- Game specific stuff (well, not *that* specific)
 
 data GameState = GameState {
-    gameEntities :: TVar [Entity ()],
+    gameNextKey :: TVar EntityKey,
+    gameEntities :: TVar (Map EntityKey (Entity ())),
     gameDeltaTime :: TVar Double
     }
 
 updateGameState :: GameState -> IO ()
 updateGameState state = do
     entities <- atomically $ readTVar (gameEntities state)
-    mapM_ (runGame state . updateEntity) entities
+    mapM_ (runGame state . updateEntity) (Map.elems entities)
 
 deltaTime :: Game Double
 deltaTime = do
@@ -53,21 +56,26 @@ deltaTime = do
 allEntities :: Game [Entity ()]
 allEntities = do
     state <- ask
-    lift $ readTVar (gameEntities state)
+    entities <- lift $ readTVar (gameEntities state)
+    return (Map.elems entities)
 
 spawn :: Entity () -> Game (Entity ())
-spawn entity = do
+spawn entity@(Entity key _ _) = do
     state <- ask
-    let entitiesVar = gameEntities state
-    entities <- lift (readTVar entitiesVar)
-    lift $ writeTVar entitiesVar (entity : entities)
+    entities <- lift (readTVar (gameEntities state))
+    lift $ writeTVar (gameEntities state) (Map.insert key entity entities)
     return entity
 
 unspawn :: Entity a -> Game ()
-unspawn entity = return () -- TODO
+unspawn (Entity key _ _) = do
+    state <- ask
+    entities <- lift (readTVar (gameEntities state))
+    lift $ writeTVar (gameEntities state) (Map.delete key entities)
 
 
 -- Reusable stuff
+
+type EntityKey = Int
 
 type Game a = ReaderT GameState STM a
 
@@ -97,9 +105,15 @@ object :: (Var (Entity p) -> Game (Entity p)) -> Game (Entity ())
 object constructor = do
     this <- lift $ newTVar undefined
     result <- constructor this
-    lift $ writeTVar this result
-    let Entity m ds = result
-    return (Entity m ds)
+    let Entity _ m ds = result
+    key <- do
+        state <- ask
+        key <- lift $ readTVar (gameNextKey state)
+        lift $ writeTVar (gameNextKey state) (key + 1)
+        return key
+    lift $ writeTVar this (Entity key m ds)
+    return (Entity key m ds)
+
 
 class Method f where
     method :: (Entity p -> f) -> Var (Entity p) -> f
@@ -124,11 +138,6 @@ instance Method (d -> c -> b -> Game a) where
         this' <- lift $ readTVar this
         function this' d c b 
 
-{-method :: (Entity p -> Game a) -> Var (Entity p) -> Game a
-method function this = do
-    this' <- lift $ readTVar this
-    function this'
--}
 
 get :: (record :-> Var value) -> record -> Game value
 get label record = lift $ readTVar (getL label record)
@@ -144,10 +153,10 @@ update label f record = do
 
 
 updateEntity :: Entity p -> Game ()
-updateEntity (Entity u _) = u
+updateEntity (Entity _ u _) = u
 
 
-data Entity p = Entity (Game ()) [Dynamic]
+data Entity p = Entity EntityKey (Game ()) [Dynamic]
 
 
 class Updateable e where
@@ -185,7 +194,7 @@ instance Updateable a => Apply ToUpdater a (Maybe (Game ())) where
     apply ToUpdater a = updater a
 
 toEntity :: (HMapOut ToDynamic r Dynamic, HMapOut ToUpdater r (Maybe (Game ()))) => r -> Entity r
-toEntity l = Entity (sequence_ $ catMaybes us) ds
+toEntity l = Entity undefined (sequence_ $ catMaybes us) ds
     where
         ds = hMapOut ToDynamic l :: [Dynamic]
         us = hMapOut ToUpdater l :: [Maybe (Game ())]
@@ -194,7 +203,7 @@ requireFeature :: (Typeable e, Updateable e, Has e p) => Entity p -> e
 requireFeature e = let Just e' = getFeature e in e'
 
 getFeature :: (Typeable e, Updateable e) => Entity p -> Maybe e
-getFeature (Entity _ ds) = case catMaybes $ map fromDynamic ds of
+getFeature (Entity _ _ ds) = case catMaybes $ map fromDynamic ds of
     e:_ -> Just e
     [] -> Nothing
 
@@ -238,39 +247,39 @@ instance GetFeatures HNil where
     getFeatures _ = Just HNil
 
 instance (GetFeatures l, Typeable e) => GetFeatures (HCons e l) where
-    getFeatures e@(Entity _ ds) = case catMaybes $ map fromDynamic ds of
+    getFeatures e@(Entity _ _ ds) = case catMaybes $ map fromDynamic ds of
         e1:_ -> case getFeatures e of
             Just l -> Just (HCons e1 l)
             Nothing -> Nothing
         [] -> Nothing
 
 instance (Typeable e1, Typeable e2) => GetFeatures (e1, e2) where
-    getFeatures e@(Entity _ ds) = case getFeatures e of
+    getFeatures e@(Entity _ _ ds) = case getFeatures e of
         Just (HCons e1 (HCons e2 HNil)) -> Just (e1, e2)
         Nothing -> Nothing
 
 instance (Typeable e1, Typeable e2, Typeable e3) => GetFeatures (e1, e2, e3) where
-    getFeatures e@(Entity _ ds) = case getFeatures e of
+    getFeatures e@(Entity _ _ ds) = case getFeatures e of
         Just (HCons e1 (HCons e2 (HCons e3 HNil))) -> Just (e1, e2, e3)
         Nothing -> Nothing
 
 instance (Typeable e1, Typeable e2, Typeable e3, Typeable e4) => GetFeatures (e1, e2, e3, e4) where
-    getFeatures e@(Entity _ ds) = case getFeatures e of
+    getFeatures e@(Entity _ _ ds) = case getFeatures e of
         Just (HCons e1 (HCons e2 (HCons e3 (HCons e4 HNil)))) -> Just (e1, e2, e3, e4)
         Nothing -> Nothing
 
 instance (Typeable e1, Typeable e2, Typeable e3, Typeable e4, Typeable e5) => GetFeatures (e1, e2, e3, e4, e5) where
-    getFeatures e@(Entity _ ds) = case getFeatures e of
+    getFeatures e@(Entity _ _ ds) = case getFeatures e of
         Just (HCons e1 (HCons e2 (HCons e3 (HCons e4 (HCons e5 HNil))))) -> Just (e1, e2, e3, e4, e5)
         Nothing -> Nothing
 
 instance (Typeable e1, Typeable e2, Typeable e3, Typeable e4, Typeable e5, Typeable e6) => GetFeatures (e1, e2, e3, e4, e5, e6) where
-    getFeatures e@(Entity _ ds) = case getFeatures e of
+    getFeatures e@(Entity _ _ ds) = case getFeatures e of
         Just (HCons e1 (HCons e2 (HCons e3 (HCons e4 (HCons e5 (HCons e6 HNil)))))) -> Just (e1, e2, e3, e4, e5, e6)
         Nothing -> Nothing
 
 instance (Typeable e1, Typeable e2, Typeable e3, Typeable e4, Typeable e5, Typeable e6, Typeable e7) => GetFeatures (e1, e2, e3, e4, e5, e6, e7) where
-    getFeatures e@(Entity _ ds) = case getFeatures e of
+    getFeatures e@(Entity _ _ ds) = case getFeatures e of
         Just (HCons e1 (HCons e2 (HCons e3 (HCons e4 (HCons e5 (HCons e6 (HCons e7 HNil))))))) -> Just (e1, e2, e3, e4, e5, e6, e7)
         Nothing -> Nothing
 
