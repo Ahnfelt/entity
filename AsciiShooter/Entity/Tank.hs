@@ -46,10 +46,10 @@ onHit this Hit { receiversFault = myFault, hitEntity = entity } = do
                 let random = requireFeature this
                 position <- Physics.getPosition (requireFeature this)
                 replicateM 20 $ do
-                    x <- Random.uniform (-1, 1) random
-                    y <- Random.uniform (-1, 1) random
+                    a <- Random.uniform (0, 2 * pi) random
+                    m <- Random.uniform (0, 40) random
                     t <- Random.uniform (0.5, 1) random
-                    debree <- Debree.new position (x * 40, y * 40) 4 t
+                    debree <- Debree.new position (vector a m) 4 t
                     spawn debree
                 unspawn this
         Nothing -> return ()
