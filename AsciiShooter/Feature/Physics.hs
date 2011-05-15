@@ -29,33 +29,48 @@ data Type = Type {
     _velocity :: Var Velocity,
     _acceleration :: Var Acceleration,
     _size :: Var Vector,
+    _solid :: Bool,
     _key :: EntityKey
     } deriving (Typeable)
 
 $(mkLabels [''Type])
 
+-- Regartless of wether or not you're light:
+-- Move disregarding other lights.
+-- Then look at your movement and see what lights you moved through.
 instance Updateable Type where
     updater self = Just $ do
         dt <- deltaTime
         a <- get acceleration self
         update velocity (.+. a .* dt) self
+
         entities <- allEntities
-        boxes <- forM entities $ \entity -> do
-            let physics = getFeature entity
-            case physics of
-                Just physics -> do
-                    box <- getBoundingBox physics
-                    return (Just (box, [entity]))
-                Nothing -> return Nothing
+        boxes <- forM entities $ \entity -> case getFeature entity of
+            Just physics -> do
+                box <- getBoundingBox physics
+                return (Just (getL solid physics, (box, [entity])))
+            Nothing -> return Nothing
+        let boxes' = catMaybes boxes
+        let solidBoxes = map snd (filter fst boxes')
+        let allBoxes = map snd boxes'
+
         s <- get size self
         v <- get velocity self
         p <- get position self
-        let (p', hits) = move (catMaybes boxes) s (v .* dt) p
+
+        let (p', hits) = move solidBoxes s (v .* dt) p
+        let hits' = touches allBoxes s p p'
+        let hits'' = 
+                nubBy (\a b -> entityKey a == entityKey b) $
+                filter (\e -> entityKey e /= getL key self) $
+                hits ++ hits'
+
         set position p' self
+
         entity <- entityByKey (getL key self)
         case entity of
             Just entity -> do
-                forM_ hits $ \entity' -> do
+                forM_ hits'' $ \entity' -> do
                     case getFeature entity of
                         Just listener -> do
                             let hit = Hit { receiversFault = True, hitEntity = entity' }
@@ -68,9 +83,10 @@ instance Updateable Type where
                         Nothing -> return ()
             Nothing -> return ()
 
-new :: Position -> Velocity -> Acceleration -> Vector -> EntityKey -> Game Type
-new position velocity acceleration size key = 
-    return Type .$. position .$. velocity .$. acceleration .$. size .$. key
+
+new :: Position -> Velocity -> Acceleration -> Vector -> Bool -> EntityKey -> Game Type
+new position velocity acceleration size solid key = 
+    return Type .$. position .$. velocity .$. acceleration .$. size .$. solid .$. key
 
 modifyAcceleration :: (Acceleration -> Acceleration) -> Type -> Game ()
 modifyAcceleration f self = update acceleration f self 
@@ -138,4 +154,16 @@ move boxes size movement (x, y) =
     ((x', y'), hitX ++ hitY)
             
 
+touches :: [(Box, [a])] -> Vector -> Position -> Position -> [a]
+touches boxes (x, y) (x1, y1) (x2, y2) =
+
+    let horizontalBox = boxAround ((x1 + x2) / 2, y1) (x + abs (x2 - x1), y) in
+    let horizontalBoxes = filter (overlap horizontalBox . fst) boxes in
+    let horizontalHits = map snd horizontalBoxes in
+    
+    let verticalBox = boxAround (x2, (y1 + y2) / 2) (x, y + abs (y2 - y1)) in
+    let verticalBoxes = filter (overlap verticalBox . fst) boxes in
+    let verticalHits = map snd verticalBoxes in
+
+    concat (horizontalHits ++ verticalHits)
 

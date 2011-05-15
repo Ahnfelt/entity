@@ -16,7 +16,7 @@ import Control.Monad
 
 new :: Player -> Position -> Velocity -> Game (Entity ())
 new player position velocity = object $ \this key -> do
-    physics <- Physics.new position velocity zero (1, 1) key
+    physics <- Physics.new position velocity zero (1, 1) False key
     hitListener <- Listener.new (method onHit this)
     animation <- Animation.new physics (Projectile player)
     damage <- Damage.new 10
