@@ -12,7 +12,9 @@ import qualified AsciiShooter.Feature.Listener as Listener
 import qualified AsciiShooter.Feature.Animation as Animation
 import qualified AsciiShooter.Feature.Damage as Damage
 import qualified AsciiShooter.Feature.Health as Health
+import qualified AsciiShooter.Feature.Random as Random
 import qualified AsciiShooter.Entity.Projectile as Projectile
+import qualified AsciiShooter.Entity.Debree as Debree
 
 import Control.Monad
 
@@ -25,6 +27,7 @@ new player position velocity = object $ \this key -> do
     keyListener <- Listener.new (method (onKey player) this)
     hitListener <- Listener.new (method onHit this)
     animation <- Animation.new physics (Tank initialDirection player)
+    random <- Random.new
     return $ toEntity $ 
         keyListener .:. 
         direction .:. 
@@ -32,13 +35,23 @@ new player position velocity = object $ \this key -> do
         hitListener .:. 
         health .:. 
         animation .:. 
+        random .:. 
         nil
 
 onHit this Hit { receiversFault = myFault, hitEntity = entity } = do
     case getFeature entity of
         Just damage -> do
             h <- Damage.doDamage (requireFeature this) damage
-            when (h <= 0) $ unspawn this
+            when (h <= 0) $ do
+                let random = requireFeature this
+                position <- Physics.getPosition (requireFeature this)
+                replicateM 20 $ do
+                    x <- Random.uniform (-1, 1) random
+                    y <- Random.uniform (-1, 1) random
+                    t <- Random.uniform (0.5, 1) random
+                    debree <- Debree.new position (x * 40, y * 40) 4 t
+                    spawn debree
+                unspawn this
         Nothing -> return ()
 
 onKey player this (player', key) = when (player == player') $ case key of
