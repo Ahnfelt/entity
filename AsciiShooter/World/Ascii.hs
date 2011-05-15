@@ -27,6 +27,7 @@ drawEntity (position, sprite) picture = case sprite of
     Sprite.Tank direction state player -> drawTank picture (playerColor player) (position, direction) state
     Sprite.Projectile player -> drawProjectile picture (playerColor player) position
     Sprite.Wall size -> drawWall picture position size
+    Sprite.Debree -> drawDebree picture position
 
 background :: Integral a => a -> a -> DiffArray (Int, Int) (Char, Color)     
 background width height = 
@@ -36,6 +37,10 @@ translatePoints :: (Int, Int) -> [((Int, Int), (Char, Color))] -> [((Int, Int), 
 translatePoints (x, y) sprite = 
     map ((\((x', y'), c) -> ((x + x', y + y'), c))) sprite
 
+debreeAscii = [
+    "+"
+    ]        
+        
 projectileAscii = [
     "*"
     ]        
@@ -100,6 +105,10 @@ drawWall picture position size =
     let spriteLines = replicate height (replicate width '#') in
     let sprite = toSprite spriteLines White in
     drawSprite picture position sprite
+
+drawDebree :: Picture -> Vector -> Picture
+drawDebree picture location = 
+    drawSprite picture location (toSprite debreeAscii Yellow)
 
 drawSprite :: Picture -> Vector -> Sprite -> Picture
 drawSprite picture location (Sprite width height points) = 

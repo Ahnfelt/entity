@@ -10,7 +10,7 @@ import Control.Monad
 
 new :: Box -> Game (Entity ())
 new box = object $ \this key -> do
-    physics <- Physics.new (center box) zero zero (dimensions box) key
+    physics <- Physics.new (center box) zero zero (dimensions box) True False key
     animation <- Animation.new physics (Wall (dimensions box))
     return $ toEntity $ physics .:. animation .:. nil
 

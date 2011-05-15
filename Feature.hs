@@ -14,7 +14,7 @@
 module Feature (
     GameState (..), Game, runGame, Var, 
     updateGameState, 
-    deltaTime, allEntities, spawn, unspawn, entityByKey,
+    currentTime, deltaTime, newGenerator, allEntities, spawn, unspawn, entityByKey,
     (.:.), Combine ((+++)), 
     EntityKey, entityKey,
     Entity, toEntity, updateEntity, 
@@ -29,6 +29,7 @@ module Feature (
 import Control.Concurrent.STM
 import Control.Monad.Reader
 import Control.Monad
+import System.Random
 import Data.HList
 import Data.Dynamic
 import Data.Maybe
@@ -41,6 +42,8 @@ import qualified Data.Map as Map
 data GameState = GameState {
     gameNextKey :: TVar EntityKey,
     gameEntities :: TVar (Map EntityKey (Entity ())),
+    gameGenerator :: TVar StdGen,
+    gameCurrentTime :: TVar Double,
     gameDeltaTime :: TVar Double
     }
 
@@ -49,10 +52,23 @@ updateGameState state = do
     entities <- atomically $ readTVar (gameEntities state)
     mapM_ (runGame state . updateEntity) (Map.elems entities)
 
+newGenerator :: Game StdGen
+newGenerator = do
+    state <- ask
+    g <- lift $ readTVar (gameGenerator state)
+    let (g1, g2) = split g
+    lift $ writeTVar (gameGenerator state) g1
+    return g2
+
 deltaTime :: Game Double
 deltaTime = do
     state <- ask
     lift $ readTVar (gameDeltaTime state)
+
+currentTime :: Game Double
+currentTime = do
+    state <- ask
+    lift $ readTVar (gameCurrentTime state)
 
 allEntities :: Game [Entity ()]
 allEntities = do

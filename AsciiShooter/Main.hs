@@ -11,6 +11,7 @@ import AsciiShooter.World.NCurses
 import Control.Concurrent.STM
 import Control.Monad
 import Control.Monad.Reader
+import System.Random
 import Data.Maybe
 import qualified Data.Map as Map
 import Data.Time.Clock
@@ -19,10 +20,15 @@ import Data.IORef
 main = do
     nextKeyVar <- newTVarIO 0
     entitiesVar <- newTVarIO Map.empty
+    generator <- newStdGen
+    generatorVar <- newTVarIO generator
+    currentTimeVar <- newTVarIO 0
     deltaTimeVar <- newTVarIO 0
     let state = GameState { 
         gameNextKey = nextKeyVar,
         gameEntities = entitiesVar, 
+        gameGenerator = generatorVar,
+        gameCurrentTime = currentTimeVar,
         gameDeltaTime = deltaTimeVar 
         }
 
@@ -60,7 +66,11 @@ main = do
         oldTime <- readIORef lastTime
         newTime <- getCurrentTime
         writeIORef lastTime newTime
-        atomically $ writeTVar deltaTimeVar (diffTime newTime oldTime)
+        atomically $ do
+            let dt = diffTime newTime oldTime
+            writeTVar deltaTimeVar dt
+            t <- readTVar (gameCurrentTime state)
+            writeTVar (gameCurrentTime state) (t + dt)
 
         entities <- atomically $ readTVar entitiesVar
         forM_ (inputKeys input') $ \key -> mapM_ (runGame state . fireInput key) (Map.elems entities)

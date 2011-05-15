@@ -11,4 +11,5 @@ data Sprite
     = Tank Direction CaterpillarState Player
     | Projectile Player
     | Wall Vector
+    | Debree
 
