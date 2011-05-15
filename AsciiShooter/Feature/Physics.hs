@@ -4,7 +4,7 @@ module AsciiShooter.Feature.Physics (
     Type, new, 
     modifyAcceleration, modifyVelocity,
     getAcceleration, getVelocity, getPosition,
-    getBoundingBox,
+    getBoundingBox, getCanBlock, getCanBeBlocked,
     Hit (..)
     ) where
 
@@ -118,6 +118,12 @@ getBoundingBox self = do
     p <- get position self
     s <- get size self
     return (boxAround p s)
+
+getCanBlock :: Type -> Bool
+getCanBlock self = getL canBlock self
+
+getCanBeBlocked :: Type -> Bool
+getCanBeBlocked self = getL canBeBlocked self
 
 
 move :: [(Box, [a])] -> Vector -> Vector -> Position -> (Position, [a])

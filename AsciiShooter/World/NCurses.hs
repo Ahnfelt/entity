@@ -65,10 +65,12 @@ initializeColors = do
     green <- newColorID ColorGreen ColorBlack 2
     black <- newColorID ColorBlack ColorBlack 3
     blue <- newColorID ColorBlue ColorBlack 4
+    yellow <- newColorID ColorYellow ColorBlack 5
     return $ \color -> case color of 
         Transparent -> black
         Green -> green
         Blue -> blue
+        Yellow -> yellow
         _ -> red
 
 draw :: Window -> (Color -> ColorID) -> WorldOutput -> Curses ()

@@ -7,4 +7,5 @@ data Sprite
     = Tank Direction Player
     | Projectile Player
     | Wall Vector
+    | Debree
 
