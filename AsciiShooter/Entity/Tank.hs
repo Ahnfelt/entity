@@ -21,7 +21,7 @@ new player position velocity = object $ \this key -> do
     let initialDirection = North
     health <- Health.new 20
     direction <- Direction.new initialDirection
-    physics <- Physics.new position velocity zero (3, 3) True key
+    physics <- Physics.new position velocity zero (3, 3) True True key
     keyListener <- Listener.new (method (onKey player) this)
     hitListener <- Listener.new (method onHit this)
     animation <- Animation.new physics (Tank initialDirection player)

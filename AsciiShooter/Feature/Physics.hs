@@ -29,7 +29,8 @@ data Type = Type {
     _velocity :: Var Velocity,
     _acceleration :: Var Acceleration,
     _size :: Var Vector,
-    _solid :: Bool,
+    _canBlock :: Bool,
+    _canBeBlocked :: Bool,
     _key :: EntityKey
     } deriving (Typeable)
 
@@ -45,17 +46,19 @@ instance Updateable Type where
         boxes <- forM entities $ \entity -> case getFeature entity of
             Just physics -> do
                 box <- getBoundingBox physics
-                return (Just (getL solid physics, (box, [entity])))
+                return (Just (getL canBlock physics, (box, [entity])))
             Nothing -> return Nothing
         let boxes' = catMaybes boxes
-        let solidBoxes = map snd (filter fst boxes')
+        let blockingBoxes = map snd (filter fst boxes')
         let allBoxes = map snd boxes'
 
         s <- get size self
         v <- get velocity self
         p <- get position self
 
-        let (p', hits) = move solidBoxes s (v .* dt) p
+        let (p', hits) = if getL canBeBlocked self
+                then move blockingBoxes s (v .* dt) p
+                else (p .+. v .* dt, [])
         let hits' = touches allBoxes s p p'
         let hits'' = 
                 nubBy (\a b -> entityKey a == entityKey b) $
@@ -83,18 +86,17 @@ instance Updateable Type where
 
 {-|
     The position, velocity and acceleration should be self-explanatory, but note that
-    this feature automatically applies acceleration and velocity to move as far as it
-    is supposed to, but without crossing other solid entities. The size is the size 
-    of the bounding box around the object, centered at the position. The key is the
-    key of the entity that uses this instance of the feature.
-    
-    Only solid objects can stand in the way of other (solid or non-solid) objects. 
-    However, hit events are sent out for all objects that are hit or overlap the path,
-    regardless of solidity of either object.
+    this feature automatically applies acceleration and velocity to move the object. 
+    The size is the size of the bounding box around the object, centered at the 
+    position. The key is the key of the entity that uses this instance of the feature.
+
+    Movement is automatically confined so that a canBeBlocked object is never moved
+    into a canBlock object. However, hit events are sent out for all objects that are 
+    hit or overlap the path, regardless of the blocking properties of either object.
 -}
-new :: Position -> Velocity -> Acceleration -> Vector -> Bool -> EntityKey -> Game Type
-new position velocity acceleration size solid key = 
-    return Type .$. position .$. velocity .$. acceleration .$. size .$. solid .$. key
+new :: Position -> Velocity -> Acceleration -> Vector -> Bool -> Bool -> EntityKey -> Game Type
+new position velocity acceleration size canBlock canBeBlocked key = 
+    return Type .$. position .$. velocity .$. acceleration .$. size .$. canBlock .$. canBeBlocked .$. key
 
 modifyAcceleration :: (Acceleration -> Acceleration) -> Type -> Game ()
 modifyAcceleration f self = update acceleration f self 
