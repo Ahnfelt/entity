@@ -35,9 +35,6 @@ data Type = Type {
 
 $(mkLabels [''Type])
 
--- Regartless of wether or not you're light:
--- Move disregarding other lights.
--- Then look at your movement and see what lights you moved through.
 instance Updateable Type where
     updater self = Just $ do
         dt <- deltaTime
