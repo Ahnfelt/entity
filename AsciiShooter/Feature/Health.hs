@@ -18,7 +18,9 @@ new :: Double -> Game Type
 new health = 
     return Type .$. health
 
-add :: Double -> Type -> Game ()
-add amount self = 
+add :: Double -> Type -> Game Double
+add amount self = do
     update health (+ amount) self
+    h <- get health self
+    return h 
 

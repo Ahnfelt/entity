@@ -37,10 +37,7 @@ new player position velocity = object $ \this key -> do
 onHit this Hit { receiversFault = myFault, hitEntity = entity } = do
     case getFeature entity of
         Just damage -> do
-            amount <- get Damage.damage damage
-            let health = requireFeature this
-            Health.add (-amount) health
-            h <- get Health.health health
+            h <- Damage.doDamage (requireFeature this) damage
             when (h <= 0) $ unspawn this
         Nothing -> return ()
 
