@@ -81,6 +81,17 @@ instance Updateable Type where
             Nothing -> return ()
 
 
+{-|
+    The position, velocity and acceleration should be self-explanatory, but note that
+    this feature automatically applies acceleration and velocity to move as far as it
+    is supposed to, but without crossing other solid entities. The size is the size 
+    of the bounding box around the object, centered at the position. The key is the
+    key of the entity that uses this instance of the feature.
+    
+    Only solid objects can stand in the way of other (solid or non-solid) objects. 
+    However, hit events are sent out for all objects that are hit or overlap the path,
+    regardless of solidity of either object.
+-}
 new :: Position -> Velocity -> Acceleration -> Vector -> Bool -> EntityKey -> Game Type
 new position velocity acceleration size solid key = 
     return Type .$. position .$. velocity .$. acceleration .$. size .$. solid .$. key
