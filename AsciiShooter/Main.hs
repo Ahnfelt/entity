@@ -56,8 +56,8 @@ main = do
     newTime <- getCurrentTime
     lastTime <- newIORef newTime
 
-    drawTime <- newIORef 0
-    updateTime <- newIORef 0
+    profileDraw <- profiler "draw"
+    profileUpdate <- profiler "update"
 
     withWorld $ \world -> forever $ do
 
@@ -98,3 +98,17 @@ fireInput playerKey entity = case getFeature entity of
 diffTime :: UTCTime -> UTCTime -> Double
 diffTime newTime oldTime = (fromRational . toRational) (diffUTCTime newTime oldTime)
 
+
+profiler :: String -> IO (IO a -> IO a)
+profiler name = do
+    timeSpent <- newIORef 0
+    return $ \monad -> do
+        start <- getCurrentTime
+        result <- monad
+        stop <- getCurrentTime
+        t <- readIORef timeSpent
+        let t' = t + diffTime stop start
+        writeIORef timeSpent t'
+        putStrLn ("Time spent so far in " ++ name ++ ":" ++ show t')
+        return result
+        

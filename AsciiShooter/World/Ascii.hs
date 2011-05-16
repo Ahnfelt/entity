@@ -1,4 +1,8 @@
-module AsciiShooter.World.Ascii where
+module AsciiShooter.World.Ascii (
+    Color (..),
+    background, drawEntity,
+    toPixel
+    ) where
 
 import Feature
 import qualified AsciiShooter.Feature.Physics as Physics
@@ -6,32 +10,45 @@ import AsciiShooter.Utilities.Mechanics
 import AsciiShooter.World
 import qualified AsciiShooter.Sprite as Sprite
 
+import qualified Data.Set as Set
+import Control.Monad.ST
+import Data.Array.ST
 import Data.Foldable 
-import Data.Array.Diff
+import Data.Word
+import Data.Bits
 import Data.Set (Set)
 import Data.List (transpose)
-import qualified Data.Set as Set
 import Prelude hiding (maximum)
 
-data Color = Red | Green | Yellow | Blue | Magenta | Cyan | Black | White | Transparent deriving (Eq, Ord, Show)
-type Picture = DiffArray (Int, Int) (Char, Color)
+data Color = Red | Green | Yellow | Blue | Magenta | Cyan | Black | White | Transparent deriving (Eq, Ord, Show, Enum)
+type Picture s = STUArray s (Int, Int) Word32
 data Sprite = Sprite Int Int [((Int, Int), (Char, Color))]
+
+writePixel :: Picture s -> (Int, Int) -> (Char, Color) -> ST s ()
+writePixel array i p = writeArray array i (fromPixel p)
+
+fromPixel :: (Char, Color) -> Word32
+fromPixel (char, color) = (fromIntegral (fromEnum char `shiftL` 8) .|. fromIntegral (fromEnum color))
+
+toPixel :: Word32 -> (Char, Color)
+toPixel p = (toEnum (fromIntegral (p `shiftR` 8)), toEnum (fromIntegral (p .&. 255)))
 
 playerColor 1 = Red
 playerColor 2 = Green
 playerColor 3 = Blue
 playerColor 4 = Yellow
 
-drawEntity :: (Position, Sprite.Sprite) -> Picture -> Picture
-drawEntity (position, sprite) picture = case sprite of
+drawEntity :: Picture s -> (Position, Sprite.Sprite) -> ST s ()
+drawEntity picture (position, sprite) = case sprite of
     Sprite.Tank direction state player -> drawTank picture (playerColor player) (position, direction) state
     Sprite.Projectile player -> drawProjectile picture (playerColor player) position
     Sprite.Wall size -> drawWall picture position size
     Sprite.Debree -> drawDebree picture position
 
-background :: Integral a => a -> a -> DiffArray (Int, Int) (Char, Color)     
-background width height = 
-    listArray ((0, 0), (fromIntegral width - 1, fromIntegral height - 1)) (repeat (' ', Transparent))
+background :: Integral a => a -> a -> ST s (Picture s)
+background width height = do
+    newArray ((0, 0), (fromIntegral width - 1, fromIntegral height - 1)) (fromPixel (' ', Transparent))
+    
 
 translatePoints :: (Int, Int) -> [((Int, Int), (Char, Color))] -> [((Int, Int), (Char, Color))]
 translatePoints (x, y) sprite = 
@@ -91,32 +108,33 @@ toSprite lines color =
         toSpriteLine column row [] = []
         toSpriteLine column row (char : line) = ((column, row), (char, color)) : toSpriteLine (column + 1) row line
 
-drawProjectile :: Picture -> Color -> Vector -> Picture
+drawProjectile :: Picture s -> Color -> Vector -> ST s ()
 drawProjectile picture playerColor location = 
     drawSprite picture location (toSprite projectileAscii playerColor)
 
-drawTank :: Picture -> Color -> (Vector, Direction) -> Sprite.CaterpillarState -> Picture
+drawTank :: Picture s -> Color -> (Vector, Direction) -> Sprite.CaterpillarState -> ST s ()
 drawTank picture playerColor (location, direction) state =
     drawSprite picture location (tankSprite direction state playerColor)
 
-drawWall :: Picture -> Vector -> Vector -> Picture
+drawWall :: Picture s -> Vector -> Vector -> ST s ()
 drawWall picture position size = 
     let (width, height) = (round (vectorX size), round (vectorY size)) in
     let spriteLines = replicate height (replicate width '#') in
     let sprite = toSprite spriteLines White in
     drawSprite picture position sprite
 
-drawDebree :: Picture -> Vector -> Picture
+drawDebree :: Picture s -> Vector -> ST s ()
 drawDebree picture location = 
     drawSprite picture location (toSprite debreeAscii Yellow)
 
-drawSprite :: Picture -> Vector -> Sprite -> Picture
-drawSprite picture location (Sprite width height points) = 
-    let ((x1, y1), (x2, y2)) = bounds picture in
-    let withinBounds (x, y) = x1 <= x && x <= x2 && y1 <= y && y <= y2 in
-    let (x, y) = toTuple location in
-    let points' = translatePoints (x - width `div` 2, y2 - y - height `div` 2) points in
-    picture // filter (withinBounds . fst) points'
+drawSprite :: Picture s -> Vector -> Sprite -> ST s ()
+drawSprite picture location (Sprite width height points) = do
+    ((x1, y1), (x2, y2)) <- getBounds picture
+    let withinBounds (x, y) = x1 <= x && x <= x2 && y1 <= y && y <= y2
+    let (x, y) = toTuple location
+    let points' = translatePoints (x - width `div` 2, y2 - y - height `div` 2) points
+    forM_ (filter (withinBounds . fst) points') $ \(i, c) -> do
+        writePixel picture i c
     
 toTuple :: Vector -> (Int, Int)
 toTuple vector = (round (vectorX vector), round (vectorY vector))

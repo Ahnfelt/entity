@@ -11,7 +11,9 @@ import Control.Concurrent.MVar
 import Control.Concurrent.STM
 import Control.Monad.IO.Class
 import Control.Monad hiding (mapM_, forM_)
-import Data.Array.Diff
+import Data.Array.ST
+import Data.Array.Unboxed
+import Data.Word
 import Data.Char (toLower)
 import Data.Foldable (mapM_, forM_)
 import qualified Data.Map as Map
@@ -32,12 +34,8 @@ withWorld gameFunction = do
             loop window colors channel stateVariable doneVariable stopVariable
         result <- gameFunction $ World {
             input = atomically $ do
-                empty <- isEmptyTChan channel
-                if empty 
-                    then return (WorldInput { inputKeys = [] })
-                    else do
-                        state <- readTChan channel
-                        return (WorldInput { inputKeys = [state] }),
+                keys <- untilM (isEmptyTChan channel) (readTChan channel)
+                return (WorldInput { inputKeys = keys }),
             output = \state -> do
                 putMVar stateVariable state
                 takeMVar doneVariable
@@ -59,6 +57,16 @@ withWorld gameFunction = do
                         Nothing -> return ()
                     loop window colors channel stateVariable doneVariable stopVariable
 
+untilM :: (Monad m) => (m Bool) -> m a -> m [a]
+untilM predicate monad = do
+    b <- predicate
+    if not b 
+        then do
+            a <- monad
+            as <- untilM predicate monad
+            return (a : as)
+        else
+            return []
 
 initializeColors :: Curses (Color -> ColorID)
 initializeColors = do
@@ -85,14 +93,17 @@ draw :: Window -> (Color -> ColorID) -> WorldOutput -> Curses ()
 draw window colors WorldOutput { outputSprites = sprites } = do
     (rows, columns) <- screenSize
     -- Workaround (rows - 1) because drawing on the bottom edge breaks NCurses
-    let picture = background columns (rows - 1)   
-    let picture' = foldr drawEntity picture (Map.elems sprites)
+    let picture' = runSTUArray $ do
+            picture <- background columns (rows - 1)
+            mapM_ (drawEntity picture) (Map.elems sprites)
+            return picture
     drawPicture window colors picture'
 
-drawPicture :: Window -> (Color -> ColorID) -> Picture -> Curses ()
+drawPicture :: Window -> (Color -> ColorID) -> UArray (Int, Int) Word32 -> Curses ()
 drawPicture window colors picture = do
     updateWindow window $ do
-        forM_ (assocs picture) $ \((x, y), (character, color)) -> do
+        forM_ (assocs picture) $ \((x, y), c) -> do
+            let (character, color) = toPixel c
             moveCursor (fromIntegral y) (fromIntegral x)
             setColor (colors color)
             drawText (T.pack ([character]))
