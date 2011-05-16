@@ -48,7 +48,9 @@ instance Updateable Type where
         boxes <- forM entities $ \entity -> case getFeature entity of
             Just physics -> do
                 box <- getBoundingBox physics
-                return (Just (getL canBlock physics, (box, [entity])))
+                if (entityKey entity /= getL key self)
+                    then return (Just (getL canBlock physics, (box, [entity])))
+                    else return Nothing
             Nothing -> return Nothing
         let boxes' = catMaybes boxes
         let blockingBoxes = map snd (filter fst boxes')
@@ -58,13 +60,13 @@ instance Updateable Type where
         v <- get velocity self
         p <- get position self
 
+        let instant = not (getL canBlock self)
         let (p', hits) = if getL canBeBlocked self
-                then move blockingBoxes s (v .* dt) p
+                then move blockingBoxes instant s (v .* dt) p
                 else (p .+. v .* dt, [])
         let hits' = touches allBoxes s p p'
         let hits'' = 
                 nubBy (\a b -> entityKey a == entityKey b) $
-                filter (\e -> entityKey e /= getL key self) $
                 hits ++ hits'
 
         set position p' self
@@ -134,12 +136,12 @@ getCanBeBlocked :: Type -> Bool
 getCanBeBlocked self = getL canBeBlocked self
 
 
-move :: [(Box, [a])] -> Vector -> Vector -> Position -> (Position, [a])
-move boxes size movement (x, y) =
+move :: [(Box, [a])] -> Bool -> Vector -> Vector -> Position -> (Position, [a])
+move boxes instant size movement (x, y) =
 
     -- Move horizontally as far as possible (at most by vectorX movement)
     let startBox@((x1, y1), (x2, y2)) = boxAround (x, y) size in
-    let boxes' = filter (not . overlap startBox . fst) boxes in
+    let boxes' = exclude startBox boxes in
     let (x', hitX) = if vectorX movement <= 0 
             then
                 let box = ((x1 + vectorX movement, y1), (x2, y2)) in
@@ -158,7 +160,7 @@ move boxes size movement (x, y) =
             
     -- Then move vertically as far as possible (at most by vectorY movement)
     let startBox@((x1, y1), (x2, y2)) = boxAround (x', y) size in
-    let boxes' = filter (not . overlap startBox . fst) boxes in
+    let boxes' = exclude startBox boxes in
     let (y', hitY) = if vectorY movement <= 0 
             then
                 let box = ((x1, y1 + vectorY movement), (x2, y2)) in
@@ -176,7 +178,11 @@ move boxes size movement (x, y) =
                 (max y2 (y2' - epsilon) - vectorY size / 2, hit) in
 
     ((x', y'), hitX ++ hitY)
-            
+    
+    where
+        exclude startBox boxes 
+            | instant = boxes
+            | otherwise = filter (not . overlap startBox . fst) boxes
 
 touches :: [(Box, [a])] -> Vector -> Position -> Position -> [a]
 touches boxes (x, y) (x1, y1) (x2, y2) =
