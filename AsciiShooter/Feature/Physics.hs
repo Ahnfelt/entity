@@ -2,7 +2,8 @@
 
 module AsciiShooter.Feature.Physics (
     Type, new, 
-    modifyAcceleration, modifyVelocity,
+    modifyAcceleration, modifyVelocity, 
+    getDistanceTraveled,
     getAcceleration, getVelocity, getPosition,
     getBoundingBox, getCanBlock, getCanBeBlocked,
     Hit (..)
@@ -28,6 +29,7 @@ data Type = Type {
     _position :: Var Position,
     _velocity :: Var Velocity,
     _acceleration :: Var Acceleration,
+    _distanceTraveled :: Var Double,
     _size :: Var Vector,
     _canBlock :: Bool,
     _canBeBlocked :: Bool,
@@ -66,6 +68,9 @@ instance Updateable Type where
                 hits ++ hits'
 
         set position p' self
+        
+        let d = vectorLength (p .-. p') 
+        update distanceTraveled (d +) self
 
         entity <- entityByKey (getL key self)
         case entity of
@@ -96,7 +101,7 @@ instance Updateable Type where
 -}
 new :: Position -> Velocity -> Acceleration -> Vector -> Bool -> Bool -> EntityKey -> Game Type
 new position velocity acceleration size canBlock canBeBlocked key = 
-    return Type .$. position .$. velocity .$. acceleration .$. size .$. canBlock .$. canBeBlocked .$. key
+    return Type .$. position .$. velocity .$. acceleration .$. (0 :: Double) .$. size .$. canBlock .$. canBeBlocked .$. key
 
 modifyAcceleration :: (Acceleration -> Acceleration) -> Type -> Game ()
 modifyAcceleration f self = update acceleration f self 
@@ -112,6 +117,9 @@ getVelocity self = get velocity self
 
 getPosition :: Type -> Game Position
 getPosition self = get position self
+
+getDistanceTraveled :: Type -> Game Double
+getDistanceTraveled self = get distanceTraveled self
 
 getBoundingBox :: Type -> Game Box
 getBoundingBox self = do

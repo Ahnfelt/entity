@@ -22,7 +22,7 @@ new player position velocity = object $ \this key -> do
     animation <- Animation.new physics (Projectile player)
     random <- Random.new
     damage <- Damage.new 10
-    return $ toEntity $ physics .:. hitListener .:. animation .:. nil -- damage .:. random .:. nil
+    return $ toEntity $ physics .:. hitListener .:. animation .:. damage .:. random .:. nil
 
 onHit this Hit { hitEntity = entity } = case getFeature entity of
     Just physics | Physics.getCanBlock physics || Physics.getCanBeBlocked physics -> do

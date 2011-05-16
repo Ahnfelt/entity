@@ -19,7 +19,13 @@ $(mkLabels [''Type])
 
 instance Updateable Type where
     updater self = Just $ do
-        update sprite animate self
+        s <- get sprite self
+        case s of 
+            (Tank direction _ player) -> do
+                d <- Physics.getDistanceTraveled (getL physics self)
+                let caterpillerState = if even (truncate d) then CaterpillarState1 else CaterpillarState2
+                set sprite (Tank direction caterpillerState player) self
+            _ -> return ()
 
 new :: Physics.Type -> Sprite -> Game Type
 new physics sprite = 
@@ -34,5 +40,4 @@ getPositionedSprite self = do
     s <- get sprite self
     return (p, s)
 
-animate (Tank direction caterpiller player) = Tank direction (nextCaterpillarState caterpiller) player -- TODO animate based on drived distance!
-animate sprite = sprite
+

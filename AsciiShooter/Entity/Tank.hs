@@ -40,7 +40,7 @@ new player position velocity = object $ \this key -> do
         random .:. 
         nil
 
-onHit this Hit { receiversFault = myFault, hitEntity = entity } = unspawn this do
+onHit this Hit { receiversFault = myFault, hitEntity = entity } = do
     case getFeature entity of
         Just damage -> do
             h <- Damage.doDamage (requireFeature this) damage
