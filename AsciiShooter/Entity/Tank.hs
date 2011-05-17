@@ -40,7 +40,7 @@ new player position velocity = object $ \this key -> do
         random .:. 
         nil
 
-onHit this Hit { receiversFault = myFault, hitEntity = entity } = do
+onHit this Hit { hitMyFault = myFault, hitEntity = entity } = do
     case getFeature entity of
         Just damage -> do
             h <- Damage.doDamage (requireFeature this) damage
@@ -68,7 +68,7 @@ onKey player this (player', key) = when (player == player') $ case key of
         position <- Physics.getPosition (requireFeature this)
         direction <- get Direction.direction (requireFeature this)
         let vector = directionVector direction .* 2
-        projectile <- Projectile.new player (position .+. vector .* 2) (vector .* 30)
+        projectile <- Projectile.new player (position .+. vector .* 2) (vector .* 30) 2
         spawn projectile
         return ()
     where

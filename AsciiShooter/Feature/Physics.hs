@@ -21,7 +21,8 @@ import Data.List
 import Control.Monad
 
 data Hit = Hit { 
-    receiversFault :: Bool,
+    hitBounce :: Maybe Velocity,
+    hitMyFault :: Bool,
     hitEntity :: Entity ()
     } deriving (Typeable)
 
@@ -61,17 +62,21 @@ instance Updateable Type where
         p <- get position self
 
         let instant = not (getL canBlock self)
-        let (p', hits) = if getL canBeBlocked self
+        let (p', hits, hitX, hitY) = if getL canBeBlocked self
                 then move blockingBoxes instant s (v .* dt) p
-                else (p .+. v .* dt, [])
+                else (p .+. v .* dt, [], False, False)
         let hits' = touches allBoxes s p p'
         let hits'' = 
                 nubBy (\a b -> entityKey a == entityKey b) $
                 hits ++ hits'
 
+        let bounce = if hitX || hitY 
+                then Just ((if hitX then -1 else 1) * vectorX v, (if hitY then -1 else 1) * vectorY v)
+                else Nothing
+
         set position p' self
         
-        let d = vectorLength (p .-. p') 
+        let d = magnitude (p .-. p') 
         update distanceTraveled (d +) self
 
         entity <- entityByKey (getL key self)
@@ -80,12 +85,12 @@ instance Updateable Type where
                 forM_ hits'' $ \entity' -> do
                     case getFeature entity of
                         Just listener -> do
-                            let hit = Hit { receiversFault = True, hitEntity = entity' }
+                            let hit = Hit { hitMyFault = True, hitBounce = bounce, hitEntity = entity' }
                             Listener.fireEvent hit listener
                         Nothing -> return ()
                     case getFeature entity' of
                         Just listener -> do
-                            let hit = Hit { receiversFault = False, hitEntity = entity }
+                            let hit = Hit { hitMyFault = False, hitBounce = Nothing, hitEntity = entity }
                             Listener.fireEvent hit listener
                         Nothing -> return ()
             Nothing -> return ()
@@ -136,48 +141,48 @@ getCanBeBlocked :: Type -> Bool
 getCanBeBlocked self = getL canBeBlocked self
 
 
-move :: [(Box, [a])] -> Bool -> Vector -> Vector -> Position -> (Position, [a])
+move :: [(Box, [a])] -> Bool -> Vector -> Vector -> Position -> (Position, [a], Bool, Bool)
 move boxes instant size movement (x, y) =
 
     -- Move horizontally as far as possible (at most by vectorX movement)
     let startBox@((x1, y1), (x2, y2)) = boxAround (x, y) size in
     let boxes' = exclude startBox boxes in
-    let (x', hitX) = if vectorX movement <= 0 
+    let (x', hitX, didHitX) = if vectorX movement <= 0 
             then
                 let box = ((x1 + vectorX movement, y1), (x2, y2)) in
                 let boxes'' = filter (overlap box . fst) boxes' in
                 let boxes''' = map (\(b, e) -> (vectorX (snd b), e)) boxes'' in
                 let stop = (x1 + vectorX movement, []) in
                 let (x1', hit) = maximumBy (comparing fst) (stop : boxes''') in
-                (min x1 (x1' + epsilon) + vectorX size / 2, hit)
+                (min x1 (x1' + epsilon) + vectorX size / 2, hit, not (null hit))
             else
                 let box = ((x1, y1), (x2 + vectorX movement, y2)) in
                 let boxes'' = filter (overlap box . fst) boxes' in
                 let boxes''' = map (\(b, e) -> (vectorX (fst b), e)) boxes'' in
                 let stop = (x2 + vectorX movement, []) in
                 let (x2', hit) = minimumBy (comparing fst) (stop : boxes''') in
-                (max x2 (x2' - epsilon) - vectorX size / 2, hit) in
+                (max x2 (x2' - epsilon) - vectorX size / 2, hit, not (null hit)) in
             
     -- Then move vertically as far as possible (at most by vectorY movement)
     let startBox@((x1, y1), (x2, y2)) = boxAround (x', y) size in
     let boxes' = exclude startBox boxes in
-    let (y', hitY) = if vectorY movement <= 0 
+    let (y', hitY, didHitY) = if vectorY movement <= 0 
             then
                 let box = ((x1, y1 + vectorY movement), (x2, y2)) in
                 let boxes'' = filter (overlap box . fst) boxes' in
                 let boxes''' = map (\(b, e) -> (vectorY (snd b), e)) boxes'' in
                 let stop = (y1 + vectorY movement, []) in
                 let (y1', hit) = maximumBy (comparing fst) (stop : boxes''') in
-                (min y1 (y1' + epsilon) + vectorY size / 2, hit)
+                (min y1 (y1' + epsilon) + vectorY size / 2, hit, not (null hit))
             else
                 let box = ((x1, y1), (x2, y2 + vectorY movement)) in
                 let boxes'' = filter (overlap box . fst) boxes' in
                 let boxes''' = map (\(b, e) -> (vectorY (fst b), e)) boxes'' in
                 let stop = (y2 + vectorY movement, []) in
                 let (y2', hit) = minimumBy (comparing fst) (stop : boxes''') in
-                (max y2 (y2' - epsilon) - vectorY size / 2, hit) in
+                (max y2 (y2' - epsilon) - vectorY size / 2, hit, not (null hit)) in
 
-    ((x', y'), hitX ++ hitY)
+    ((x', y'), hitX ++ hitY, didHitX, didHitY)
     
     where
         exclude startBox boxes 

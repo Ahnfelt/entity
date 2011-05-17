@@ -102,16 +102,18 @@ infixr 7 ./
 infixr 7 *.
 infixr 7 /.
 
-vectorLength :: Vector -> Double
-vectorLength (a,b) = sqrt (a*a + b*b)
-
 norm :: Vector -> Vector
-norm v = v ./ vectorLength v
+norm v = v ./ magnitude v
 
 dot :: Vector -> Vector -> Double
 dot (a, b) (c, d) = a*c + b*d
 
-angle :: Vector -> Vector -> Double
-angle v1 v2 = let x = norm v1 `dot` norm v2 in if x < -1 || x > 1 then pi else acos x
+angleBetween :: Vector -> Vector -> Double
+angleBetween v1 v2 = let x = norm v1 `dot` norm v2 in if x < -1 || x > 1 then pi else acos x
 
+angle :: Vector -> Double
+angle (x, y) = atan2 y x
+
+magnitude :: Vector -> Double
+magnitude (a, b) = sqrt (a * a + b * b)
 
