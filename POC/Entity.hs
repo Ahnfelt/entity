@@ -33,7 +33,8 @@ data EntityState s a = EntityState a [Dynamic] [GameMonad s ()]
 
 
 {-|
-    Given a state, updates a list of entities in parallel. 
+    Given a state, updates (the features of) the entities in parallel. 
+    Each individual feature update is atomic, in the STM sense.
     It returns when all the entities in the list have been updated.
 -}
 updateEntities :: s -> [EntityState s a] -> IO ()
