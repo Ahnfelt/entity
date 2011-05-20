@@ -26,18 +26,18 @@ import Data.Maybe
     The type of all entities. The first argument is a heterogeneous list of 
     features, which allows us to maintain type safety.
 -}
-data EntityState s a = EntityState a [Dynamic] (GameMonad s ())
+data EntityState s a = EntityState a [Dynamic] [GameMonad s ()]
 
 
 {-|
     Updates all the features of an entity.
 -}
-updateEntity :: EntityState s a -> GameMonad s ()
-updateEntity (EntityState _ _ updater) = updater
+updateEntity :: EntityState s a -> [GameMonad s ()]
+updateEntity (EntityState _ _ updaters) = updaters
 
 
 {-|
-    A wrapper that prevents the use of "this" until it has been fully constructed.
+    A wrapper that discourages the use of "this" until it has been fully constructed.
 -}
 newtype Eventually a = Eventually (TVar a)
 
@@ -70,13 +70,14 @@ object function = do
     let dynamics = mapDynamic list
     let updaters = catMaybes (mapUpdater list)
     let list' = mapSecond list
-    let entity = EntityState list' dynamics (sequence_ updaters)
+    let entity = EntityState list' dynamics updaters
     lift $ writeTVar this entity
     return entity
 
 
 {-|
     Wraps a function taking "this" so that it becomes a method.
+    You mustn't call the function returned by method in a constructor (in a feature or entity).
     See object for an example.
 -}
 method :: (EntityState s a -> GameMonad s b) -> Eventually (EntityState s a) -> GameMonad s b
@@ -150,8 +151,9 @@ data a :*: l = a :*: l
 data Nil = Nil
 
 
+{-| A requirement that a heterogeneous list contains an element of type a. -}
 class Has a l where
-    {-| Takes the first element with the expected type out of the list. -}
+    {-| Returns the first element with the expected type from the list. -}
     element :: l -> a
 
 instance Has a (a :*: l) where
@@ -161,7 +163,9 @@ instance Has a l => Has a (b :*: l) where
     element (_ :*: l) = element l
 
 
+{-| A requirement that a heterogeneous list does not contain an element of type a. -}
 class HasNot a l where
+    {-| Prepends an element to a list not already containing an element of that type. -}
     (.:.) :: a -> l -> (a :*: l)
 
 instance HasNot a () => HasNot a (a :*: l) where
