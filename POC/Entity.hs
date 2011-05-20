@@ -10,6 +10,7 @@ module Entity (
     EntityState,
     Eventually,
     GameMonad,
+    updateEntities,
     object, method,
     Feature (..),
     Has, (:*:), (.:.), Nil (..)
@@ -32,14 +33,6 @@ data EntityState s a = EntityState a [Dynamic] [GameMonad s ()]
 
 
 {-|
-    Returns a list of updaters that when run (in any order, or even in parallel) 
-    update all the features of an entity.
-    Example usage:
--}
-updateEntity :: EntityState s a -> [GameMonad s ()]
-updateEntity (EntityState _ _ updaters) = updaters
-
-{-|
     Given a state, updates a list of entities concurrently. It returns when all 
     the entities in the list have been updated.
 -}
@@ -47,7 +40,7 @@ updateEntities :: s -> [EntityState s a] -> IO ()
 updateEntities state entities = do
     counter <- newQSemN 0
     forM_ entities $ \entity -> do
-        let updaters = updateEntity entity
+        let (EntityState _ _ updaters) = entity
         forkIO $ do
             forM_ updaters $ \updater -> do
                 atomically $ runReaderT updater state
