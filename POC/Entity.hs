@@ -33,8 +33,8 @@ data EntityState s a = EntityState a [Dynamic] [GameMonad s ()]
 
 
 {-|
-    Given a state, updates a list of entities concurrently. It returns when all 
-    the entities in the list have been updated.
+    Given a state, updates a list of entities in parallel. 
+    It returns when all the entities in the list have been updated.
 -}
 updateEntities :: s -> [EntityState s a] -> IO ()
 updateEntities state entities = do
