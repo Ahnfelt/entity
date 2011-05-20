@@ -12,8 +12,7 @@ module Entity (
     GameMonad,
     object, method,
     Feature (..),
-    Has,
-    (:*:), (.:.), Nil (..)
+    Has, (:*:), (.:.), Nil (..)
     ) where
 
 import Control.Monad.Reader
@@ -146,9 +145,6 @@ instance MapUpdater Nil s where
 
 infixr 0 :*:, .:.
 
-(.:.) :: HasNot a l => a -> l -> (a :*: l)
-(.:.) = (:*:)
-
 {-| Cons and Nil for heterogeneous lists. -}
 data a :*: l = a :*: l
 data Nil = Nil
@@ -165,11 +161,15 @@ instance Has a l => Has a (b :*: l) where
     element (_ :*: l) = element l
 
 
-class HasNot a l
+class HasNot a l where
+    (.:.) :: a -> l -> (a :*: l)
 
-instance HasNot a () => HasNot a (a :*: l)
+instance HasNot a () => HasNot a (a :*: l) where
+    (.:.) = error "Can never happen since HasNot a () fails."
 
-instance HasNot a l => HasNot a (a' :*: l)
+instance HasNot a l => HasNot a (a' :*: l) where
+    (.:.) = (:*:)
 
-instance HasNot a Nil
+instance HasNot a Nil where
+    (.:.) = (:*:)
 
