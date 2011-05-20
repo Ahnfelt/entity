@@ -30,7 +30,8 @@ data EntityState s a = EntityState a [Dynamic] [GameMonad s ()]
 
 
 {-|
-    Updates all the features of an entity.
+    Returns a list of updaters that when run (in any order, or even in parallel) 
+    update all the features of an entity.
 -}
 updateEntity :: EntityState s a -> [GameMonad s ()]
 updateEntity (EntityState _ _ updaters) = updaters
