@@ -4,15 +4,16 @@
     FlexibleInstances, 
     OverlappingInstances,
     TypeSynonymInstances,
-    TypeOperators,
-    ScopedTypeVariables #-}
+    TypeOperators #-}
 
 module Entity (
     EntityState,
     Eventually,
     GameMonad,
     object, method,
-    Feature (..)
+    Feature (..),
+    Has,
+    (:*:), (.:.), Nil (..)
     ) where
 
 import Control.Monad.Reader
@@ -32,6 +33,7 @@ data EntityState s a = EntityState a [Dynamic] (GameMonad s ())
 {-|
     Updates all the features of an entity.
 -}
+updateEntity :: EntityState s a -> GameMonad s ()
 updateEntity (EntityState _ _ updater) = updater
 
 
@@ -61,16 +63,15 @@ type GameMonad s a = ReaderT s STM a
             let feature1 = feature this
             ...
 -}
-object :: forall m l l' l'' s. 
-    (MapApply ToDynamic l l', Homogeneous l' Dynamic,
-    MapApply ToUpdater l l'', Homogeneous l'' (Maybe (GameMonad s ()))) =>  
-    (Eventually (EntityState s l) -> GameMonad s l) -> GameMonad s (EntityState s l)
+object :: (MapDynamic l, MapUpdater l s, MapSecond l l') =>  
+    (Eventually (EntityState s l') -> GameMonad s l) -> GameMonad s (EntityState s l')
 object function = do
     this <- lift $ newTVar (EntityState undefined undefined undefined)
     list <- function (Eventually this)
-    let dynamics = homogeneous (mapApply ToDynamic list :: l')
-    let updaters = catMaybes (homogeneous (mapApply ToUpdater list :: l'')) :: [GameMonad s ()]
-    let entity = EntityState list dynamics (sequence_ updaters)
+    let dynamics = mapDynamic list
+    let updaters = catMaybes (mapUpdater list)
+    let list' = mapSecond list
+    let entity = EntityState list' dynamics (sequence_ updaters)
     lift $ writeTVar this entity
     return entity
 
@@ -99,74 +100,76 @@ method function (Eventually entityVariable) = do
 class Feature a e where
     feature :: e -> a
 
-instance (Typeable a) => Feature (Maybe a) (EntityState s l) where
+instance Typeable a => Feature (Maybe a) (EntityState s l) where
     feature (EntityState _ [] _) = Nothing
     feature (EntityState _ (d:ds) _) = fromMaybe (feature (EntityState undefined ds undefined)) (fromDynamic d)
 
-instance (Element a l, Typeable a) => Feature a (EntityState s l) where
+instance Has a l => Feature a (EntityState s l) where
     feature (EntityState l _ _) = element l
 
 
 ---------- Functions for heterogeneous list ----------
 
 
-data ToDynamic = ToDynamic
+class MapSecond l l' where
+    mapSecond :: l -> l'
 
-instance Typeable a => Apply ToDynamic (u, a) Dynamic where
-    apply ToDynamic = toDyn . snd
+instance MapSecond l l' => MapSecond ((a, b) :*: l) (b :*: l') where
+    mapSecond ((_, b) :*: l) = b :*: mapSecond l
+
+instance MapSecond Nil Nil where
+    mapSecond Nil = Nil
 
 
-data ToUpdater = ToUpdater
+class MapDynamic l where
+    mapDynamic :: l -> [Dynamic]
 
-instance Apply ToUpdater (Maybe (GameMonad s ()), a) (Maybe (GameMonad s ())) where
-    apply ToUpdater = fst
+instance (Typeable b, MapDynamic l) => MapDynamic ((a, b) :*: l) where
+    mapDynamic ((_, b) :*: l) = toDyn b : mapDynamic l
+
+instance MapDynamic Nil where
+    mapDynamic Nil = []
+
+
+class MapUpdater l s where
+    mapUpdater :: l -> [Maybe (GameMonad s ())]
+
+instance MapUpdater l s => MapUpdater ((Maybe (GameMonad s ()), b) :*: l) s where
+    mapUpdater ((a, _) :*: l) = a : mapUpdater l
+
+instance MapUpdater Nil s where
+    mapUpdater Nil = []
 
 
 ---------- Heterogeneous lists ----------
 
 
-infixr 0 :*:
+infixr 0 :*:, .:.
+
+(.:.) :: HasNot a l => a -> l -> (a :*: l)
+(.:.) = (:*:)
 
 {-| Cons and Nil for heterogeneous lists. -}
-data a :*: b = a :*: b
+data a :*: l = a :*: l
 data Nil = Nil
 
 
-class Element a l where
-    {-| Takes the first element with the expected type out of the list -}
+class Has a l where
+    {-| Takes the first element with the expected type out of the list. -}
     element :: l -> a
 
-instance Element a (a :*: l) where
+instance Has a (a :*: l) where
     element (a :*: _) = a
 
-instance Element a l => Element a (b :*: l) where
+instance Has a l => Has a (b :*: l) where
     element (_ :*: l) = element l
 
 
-class Homogeneous l a where
-    {-| Converts to an ordinary list, if the heterogeneous list is also homogeneous. -}
-    homogeneous :: l -> [a]
+class HasNot a l
 
-instance Homogeneous l a => Homogeneous (a :*: l) a where
-    homogeneous (a :*: l) = a : homogeneous l
+instance HasNot a () => HasNot a (a :*: l)
 
-instance Homogeneous Nil a where
-    homogeneous Nil = []
+instance HasNot a l => HasNot a (a' :*: l)
 
-
-class Apply f a b where
-    {-| A type class for functions that can be mapped over heterogeneous lists. -}
-    apply :: f -> a -> b
-
-
-class MapApply f l l' where
-    {-| Map for heterogeneous lists. -}
-    mapApply :: f -> l -> l'
-
-instance (Apply f a b, MapApply f l l') => MapApply f (a :*: l) (b :*: l') where
-    mapApply f (a :*: l) = apply f a :*: mapApply f l
-
-instance MapApply f Nil Nil where
-    mapApply _ Nil = Nil
-
+instance HasNot a Nil
 
